@@ -4,7 +4,7 @@
 #include "ui.h"
 #include "timer.h"
 
-int a[] = {10,100,1000,10000, 1000, 100};
+int a[] = {10,100,1000,100};
 // int i,*p;
 
 int16_t main(void) {
@@ -22,12 +22,10 @@ int16_t main(void) {
             timer_lower(&timer2);
             led_toggle(&led1);
             led_toggle(&led3);
-            // timer_setPeriod(&timer2, 0.5);
+            counter++;
+            if (counter == a[]
         }
-        if (timer_flag(&timer2) && ) {
-        	timer_lower(&timer2);
 
-        }
         //led_write(&led2, !sw_read(&sw2));
         //led_write(&led3, !sw_read(&sw3));
     }
