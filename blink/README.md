@@ -1,7 +1,7 @@
 # Variable-Period "Police Light"
 *Amanda Sutherland* | *Ryan Eggert* | *Subhash Gubba*
 
-To run this program on an "Elecanisms" PIC24 microprocessor board, first be sure that your environment is configured as specified by [this documents](http://elecanisms.olin.edu/handouts/20160121_BuildTools.pdf) from Olin College's 2016 "Elecanisms" course. You may also find it useful to review [this document](http://elecanisms.olin.edu/handouts/130909_elecanisms_board_notes.pdf) (especialy the "Tactile Switches/Bootloader" section) which familiarizes you with how the PIC24 board interfaces over USB with a computer.
+To run this program on an "Elecanisms" PIC24 microprocessor board, first be sure that your environment is configured as specified by [this document](http://elecanisms.olin.edu/handouts/20160121_BuildTools.pdf) from Olin College's 2016 "Elecanisms" course. You may also find it useful to review [this writeup](http://elecanisms.olin.edu/handouts/130909_elecanisms_board_notes.pdf) (especialy the "Tactile Switches/Bootloader" section) which familiarizes you with the PIC24 board and how it interfaces over USB with a computer.
 
 Clone this repository and navigate to the `blink/` directory. Open `SConstruct` and make sure that `env.PrependENVPath('PATH', '/opt/microchip/xc16/v1.25/bin')` contains the correct path to your installation of the Microchip XC16 build tools.
 
