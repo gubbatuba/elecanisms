@@ -1,4 +1,3 @@
-
 env = Environment(PIC = '24FJ128GB206', 
                   CC = 'xc16-gcc', 
                   PROGSUFFIX = '.elf', 
@@ -6,6 +5,7 @@ env = Environment(PIC = '24FJ128GB206',
                   LINKFLAGS = '-omf=elf -mcpu=$PIC -Wl,--script="app_p24FJ128GB206.gld"', 
                   CPPPATH = '../lib')
 env.PrependENVPath('PATH', '/opt/microchip/xc16/v1.25/bin')
+
 bin2hex = Builder(action = 'xc16-bin2hex $SOURCE -omf=elf',
                   suffix = 'hex', 
                   src_suffix = 'elf')
@@ -15,8 +15,19 @@ list = Builder(action = 'xc16-objdump -S -D $SOURCE > $TARGET',
                src_suffix = 'elf')
 env.Append(BUILDERS = {'List' : list})
 
-env.Program('blinkafter', ['blinkafter.c',
+env.Program('haptic', [
+      'haptic.c',
+      '../lib/timer.c',
+      '../lib/ui.c'
+   ]
+)
+
+env.Program('spi_test', ['spi_test.c',
                            '../lib/timer.c',
-                           '../lib/ui.c'])
-env.Hex('blinkafter')
-env.List('blinkafter')
+                           '../lib/ui.c',
+                           '../lib/pin.c',
+                           '../lib/spi.c'])
+
+env.Hex('haptic')
+env.List('haptic')
+env.Hex('spi_test')
