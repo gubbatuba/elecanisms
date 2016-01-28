@@ -26,7 +26,8 @@ env.Program('spi_test', ['spi_test.c',
                            '../lib/timer.c',
                            '../lib/ui.c',
                            '../lib/pin.c',
-                           '../lib/spi.c'])
+                           '../lib/spi.c',
+                           '../lib/oc.c'])
 
 env.Hex('haptic')
 env.List('haptic')
