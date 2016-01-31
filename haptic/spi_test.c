@@ -68,9 +68,37 @@ float pwm_duty_int_to_pct(uint16_t *frac) {
     return ((float)(*frac)/DUTY_MAX);
 }
 
-void pwm_set_duty(_PIN *pwm_pin, float percent) {
+void pwm_set_duty(float percent) {
     uint8_t duty_frac = pwm_duty_pct_to_int(&percent);
-    pin_write(pwm_pin, duty_frac);
+    if (pwm_direction == 1) {
+        pin_write(PWM_I1, duty_frac);
+    } else {
+        pin_write(PWM_I2, duty_frac);
+    }
+}
+
+void pwm_set_direction(unsigned char direction) {
+    // Direction is a bit [0 or 1] specifying the direction
+    // the motor should be commanded to turn. 1 is "forwards",
+    // and 0 is "reverse". Assumes fast decay mode operation.
+    if (pwm_direction != direction) {
+        // The direction to be set is different than the motor's current
+        // direction. A change should be made.
+        uint16_t prev_duty;
+        if (direction == 1) {
+            // If 1, PWM_I1 should PWM, PWM_I2 should be 0.
+            prev_duty = pin_read(PWM_I2);
+            pin_write(PWM_I2, (uint16_t)(0));
+            pin_write(PWM_I1, prev_duty);
+        } else if (direction == 0) {
+            // If 0, PWM_I1 should 0, PWM_I2 should be 1.
+            prev_duty = pin_read(PWM_I1);
+            pin_write(PWM_I1, (uint16_t)(0));
+            pin_write(PWM_I2, prev_duty);
+        } else {
+            printf("ERR: Invalid PWM direction %d received.\n", direction);
+        }
+    }
 }
 
 void setup(void) {
@@ -92,8 +120,9 @@ void setup(void) {
     timer_start(&timer1);
     timer_start(&timer2);
 
-    // Configure single PWM signal
+    // Configure dual PWM signals for bidirectional motor control
     oc_pwm(&oc1, PWM_I1, NULL, pwm_freq, pwm_duty);
+    oc_pwm(&oc2, PWM_I2, NULL, pwm_freq, pwm_duty);
 }
 
 int main(void) {
@@ -112,7 +141,7 @@ int main(void) {
             // PWM Test area. Change motor speed every second, looping
             // through an array of possible speeds (array length = 4)
             timer_lower(&timer1);
-            pwm_set_duty(PWM_I1, pwm_duty_array[pwm_duty_index]);
+            pwm_set_duty(pwm_duty_array[pwm_duty_index]);
             pwm_duty_index = (pwm_duty_index + 1) % 4;
         }
         read_angle_sensor(angle_array);  // Updates angle_array
