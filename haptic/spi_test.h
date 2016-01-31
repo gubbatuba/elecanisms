@@ -21,3 +21,4 @@ float pwm_freq = 500;       // ~245Hz is minimum
 uint16_t pwm_duty = 0;      // Start with no commanded motor motion
 _PIN* PWM_I1 = &D[8];       // Input 1 to motor driver chip
 _PIN* PWM_I2 = &D[7];       // Input 2 to motor driver chip
+uint32_t DUTY_MAX = 65536;

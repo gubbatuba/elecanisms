@@ -1,4 +1,5 @@
 #include <p24FJ128GB206.h>
+#include <stdio.h>
 #include "config.h"
 #include "common.h"
 #include "ui.h"
@@ -58,6 +59,19 @@ void read_angle_sensor(unsigned char *angle_array) {
     // Retrieve raw angle data
     uint16_t raw_angle = spi_send_NOP_read_data(spi_inst);
     spi_parse_data(raw_angle, angle_array);
+}
+
+uint16_t pwm_duty_pct_to_int(float *percent) {
+    return (uint16_t)(*percent * DUTY_MAX);
+}
+
+float pwm_duty_int_to_pct(uint16_t *frac) {
+    return ((float)(*frac)/DUTY_MAX);
+}
+
+void pwm_set_duty(_PIN *pwm_pin, float percent) {
+    uint8_t duty_frac = pwm_duty_pct_to_int(&percent);
+    pin_write(pwm_pin, duty_frac);
 }
 
 void setup(void) {
