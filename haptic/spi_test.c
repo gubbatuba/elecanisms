@@ -23,7 +23,6 @@ void spi_parse_data(uint16_t data, unsigned char *angle_array) {
         } else if (i == 1) {
             // Error flag
             ef = this_bit;
-
         } else if (i > 1 && i > data_size) {
             // Transmitted data [14 bits]
             angle_array[i-2] = this_bit;
@@ -101,11 +100,20 @@ int main(void) {
     setup();
     unsigned char angle_array[14];  // LSB will be angle_array[0]
 
+    float pwm_duty_array[4] = {0.90, 0.40, 0, 0.50};
+    uint8_t pwm_duty_index = 0;
     while (1) {
         if (timer_flag(&timer2)) {
             // Blink green light to show normal operation.
             timer_lower(&timer2);
             led_toggle(&led2);
+        }
+        if (timer_flag(&timer1)) {
+            // PWM Test area. Change motor speed every second, looping
+            // through an array of possible speeds (array length = 4)
+            timer_lower(&timer1);
+            pwm_set_duty(PWM_I1, pwm_duty_array[pwm_duty_index]);
+            pwm_duty_index = (pwm_duty_index + 1) % 4;
         }
         read_angle_sensor(angle_array);  // Updates angle_array
     }
