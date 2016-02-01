@@ -65,11 +65,6 @@ void VendorRequests(void) {
             BD[EP0IN].bytecount = 1;         // set EP0 IN byte count to 1
             BD[EP0IN].status = 0xC8;         // send packet as DATA1, set UOWN bit
             break;
-        case ENC_WRITE_REG:
-            enc_writeReg(USB_setup.wValue, USB_setup.wIndex);
-            BD[EP0IN].bytecount = 0;         // set EP0 IN byte count to 0
-            BD[EP0IN].status = 0xC8;         // send packet as DATA1, set UOWN bit
-            break;
         case ENC_READ_REG:
             result = enc_readReg(USB_setup.wValue);
             BD[EP0IN].address[0] = result.b[0];
