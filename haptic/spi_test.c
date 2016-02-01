@@ -16,8 +16,11 @@ void spi_parse_data(uint16_t data, unsigned char *angle_array) {
     unsigned char ef;
     unsigned char par_count = 0;
     int i = 0;
+    printf("spi_parse_data DATA: %d\r\n", data);
+    printf("INCOMING BINARY RAW\r\n");
     for (i; i < data_size; ++i) {
         this_bit = data & (1 << i) ? 1:0;
+        printf("%d", this_bit);
         if (i == 0) {
             // Even parity bit
             par = this_bit;
@@ -31,13 +34,17 @@ void spi_parse_data(uint16_t data, unsigned char *angle_array) {
                 par_count++;
         }
     }
+    printf("\r\nEND BINARY RAW\r\n");
     // Evaluate transmission
     if (par != par_count) {
-        printf("%s\n", "ERR: Angle measurement parity error.");
+        printf("%s\r\n", "ERR: Angle measurement parity error.");
     }
     if (ef == 1) {
-        printf("%s\n", "ERR: Error flag thrown by AS5048 angle sensor.");
+        printf("%s\r\n", "ERR: Error flag thrown by AS5048 angle sensor.");
     }
+    // int angle_array_int;
+    // sscanf(angle_array, "%d", &angle_array_int);
+    // printf("ANGLE ARRAY: %d\r\n", i);
 }
 
 void spi_send_READ(_SPI *self) {
@@ -48,17 +55,21 @@ void spi_send_READ(_SPI *self) {
 uint16_t spi_send_NOP_read_data(_SPI *self) {
     uint8_t msb = spi_transfer(self, spi_NOP12);
     uint8_t lsb = spi_transfer(self, spi_NOP12);
+    printf("MSB %d | LSB %d\r\n", msb, lsb);
     return (uint16_t)((msb << 8) | lsb);
 }
 
 void read_angle_sensor(unsigned char *angle_array) {
+    printf("Reading angle sensor...\r\n");
     pin_clear(SPI_CS);  // Assert CS LOW
     spi_send_READ(spi_inst);
     pin_set(SPI_CS);  // Assert CS HIGH
     pin_clear(SPI_CS);  // Reassert CS LOW
     // Retrieve raw angle data
     uint16_t raw_angle = spi_send_NOP_read_data(spi_inst);
+    printf("RAW ANGLE READ:%d\r\n", raw_angle);
     spi_parse_data(raw_angle, angle_array);
+    pin_set(SPI_CS);
 }
 
 uint16_t pwm_duty_pct_to_int(float *percent) {
@@ -101,12 +112,13 @@ void pwm_set_direction(unsigned char direction) {
             pin_write(PWM_I1, (uint16_t)(0));
             pin_write(PWM_I2, prev_duty);
         } else {
-            printf("ERR: Invalid PWM direction %d received.\n", direction);
+            printf("ERR: Invalid PWM direction %d received.\r\n", direction);
         }
     }
 }
 
 void setup(void) {
+    // printf("%s", clear);
     printf("START\r\n");
     // Initialize PIC24 modules.
     init_clock();
@@ -126,6 +138,7 @@ void setup(void) {
     timer_setPeriod(&timer2, 0.75);  // Timer for LED operation/status blink
     timer_start(&timer1);
     timer_start(&timer2);
+    pin_set(SPI_CS);
 
     // Configure dual PWM signals for bidirectional motor control
     oc_pwm(&oc1, PWM_I1, NULL, pwm_freq, pwm_duty);
@@ -136,7 +149,7 @@ int main(void) {
     setup();
     unsigned char angle_array[14];  // LSB will be angle_array[0]
 
-    float pwm_duty_array[4] = {0.90, 0.40, 0, 0.50};
+    float pwm_duty_array[4] = {0.10, 0.05, 0, 0.02};
     uint8_t pwm_duty_index = 0;
     pwm_set_duty(pwm_duty_array[pwm_duty_index]);
     while (1) {
@@ -157,7 +170,10 @@ int main(void) {
                 pwm_set_direction(!pwm_direction);
             }
             pwm_duty_index = (pwm_duty_index + 1) % 4;
+            read_angle_sensor(angle_array);  // Updates angle_array
         }
-        read_angle_sensor(angle_array);  // Updates angle_array
+        if (!sw_read(&sw2)) {
+            printf("%s", clear);
+        }
     }
 }
