@@ -6,6 +6,7 @@
 #include "pin.h"
 #include "spi.h"
 #include "oc.h"
+#include "uart.h"
 #include "spi_test.h"
 
 void spi_parse_data(uint16_t data, unsigned char *angle_array) {
@@ -69,7 +70,8 @@ float pwm_duty_int_to_pct(uint16_t *frac) {
 }
 
 void pwm_set_duty(float percent) {
-    uint8_t duty_frac = pwm_duty_pct_to_int(&percent);
+    uint16_t duty_frac = pwm_duty_pct_to_int(&percent);
+    printf("Computed duty frac %d from pct %f.\r\n", duty_frac, percent);
     if (pwm_direction == 1) {
         pin_write(PWM_I1, duty_frac);
     } else {
@@ -85,13 +87,16 @@ void pwm_set_direction(unsigned char direction) {
         // The direction to be set is different than the motor's current
         // direction. A change should be made.
         uint16_t prev_duty;
+        pwm_direction = direction;  // Update pwm_direction
         if (direction == 1) {
             // If 1, PWM_I1 should PWM, PWM_I2 should be 0.
+            printf("Setting motor direction FORWARD...\r\n");
             prev_duty = pin_read(PWM_I2);
             pin_write(PWM_I2, (uint16_t)(0));
             pin_write(PWM_I1, prev_duty);
         } else if (direction == 0) {
             // If 0, PWM_I1 should 0, PWM_I2 should be 1.
+            printf("Setting motor direction REVERSE...\r\n");
             prev_duty = pin_read(PWM_I1);
             pin_write(PWM_I1, (uint16_t)(0));
             pin_write(PWM_I2, prev_duty);
@@ -102,6 +107,7 @@ void pwm_set_direction(unsigned char direction) {
 }
 
 void setup(void) {
+    printf("START\r\n");
     // Initialize PIC24 modules.
     init_clock();
     init_ui();
@@ -109,6 +115,7 @@ void setup(void) {
     init_pin();
     init_oc();
     init_spi();
+    init_uart();
 
     // Configure single SPI comms. system
     pin_digitalOut(SPI_CS);
@@ -116,7 +123,7 @@ void setup(void) {
 
     // Configure & start timers used.
     timer_setPeriod(&timer1, 1);
-    timer_setPeriod(&timer2, 0.30);  // Timer for LED operation/status blink
+    timer_setPeriod(&timer2, 0.75);  // Timer for LED operation/status blink
     timer_start(&timer1);
     timer_start(&timer2);
 
@@ -131,17 +138,24 @@ int main(void) {
 
     float pwm_duty_array[4] = {0.90, 0.40, 0, 0.50};
     uint8_t pwm_duty_index = 0;
+    pwm_set_duty(pwm_duty_array[pwm_duty_index]);
     while (1) {
         if (timer_flag(&timer2)) {
             // Blink green light to show normal operation.
             timer_lower(&timer2);
             led_toggle(&led2);
+            printf("%s\r\n", "Operating...");
         }
         if (timer_flag(&timer1)) {
             // PWM Test area. Change motor speed every second, looping
             // through an array of possible speeds (array length = 4)
             timer_lower(&timer1);
+            led_toggle(&led3);
+            printf("Set PWM duty to %f.\r\n", pwm_duty_array[pwm_duty_index]);
             pwm_set_duty(pwm_duty_array[pwm_duty_index]);
+            if (pwm_duty_index == 2) {
+                pwm_set_direction(!pwm_direction);
+            }
             pwm_duty_index = (pwm_duty_index + 1) % 4;
         }
         read_angle_sensor(angle_array);  // Updates angle_array

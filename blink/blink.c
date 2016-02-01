@@ -2,12 +2,15 @@
 #include "config.h"
 #include "common.h"
 #include "ui.h"
+#include "pin.h"
 #include "timer.h"
+#include "uart.h"
 
 int16_t main(void) {
     init_clock();
     init_ui();
     init_timer();
+    init_uart();
 
     led_on(&led1); // Lights will blink police-style
                    // (alternating red and blue)
