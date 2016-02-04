@@ -51,7 +51,7 @@ void spi_init(_SPI *self, uint16_t *SPIxSTAT, uint16_t *SPIxCON1,
               uint16_t *SPIxCON2, uint16_t *SPIxBUF, 
               uint16_t *MISOrpinr, uint8_t MISOrpshift, 
               int16_t MOSIrpnum, int16_t SCKrpnum);
-void spi_open(_SPI *self, _PIN *MISO, _PIN *MOSI, _PIN *SCK, float freq);
+void spi_open(_SPI *self, _PIN *MISO, _PIN *MOSI, _PIN *SCK, float freq, uint8_t mode);
 void spi_close(_SPI *self);
 uint8_t spi_transfer(_SPI *self, uint8_t val);
 
