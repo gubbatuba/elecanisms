@@ -121,11 +121,11 @@ int16_t main(void) {
     ENC_MOSI = &D[0];
     ENC_SCK = &D[2];
     ENC_NCS = &D[3];
-
+    uint8_t ENC_MODE = 1;
     pin_digitalOut(ENC_NCS);
     pin_set(ENC_NCS);
 
-    spi_open(&spi1, ENC_MISO, ENC_MOSI, ENC_SCK, 2e6);
+    spi_open(&spi1, ENC_MISO, ENC_MOSI, ENC_SCK, 2e6, ENC_MODE);
 
     InitUSB();                              // initialize the USB registers and serial interface engine
     while (USB_USWSTAT!=CONFIG_STATE) {     // while the peripheral is not configured...
