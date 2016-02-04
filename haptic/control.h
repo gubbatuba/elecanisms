@@ -1,7 +1,7 @@
 /*
  Haptic Controller Configuration
 */
- 
+
 // SPI Configuration
 uint8_t spi_NOP12 = 0x00;
 /* SPI READ command:
@@ -26,7 +26,7 @@ _PIN* SPI_CS = &D[3];       // Chip select pin
 #define READ_SW1            3
 #define ENC_WRITE_REG       4
 #define ENC_READ_REG        5
-#define TOGGLE_LED3         8 
+#define TOGGLE_LED3         8
 #define READ_SW2            9
 #define READ_SW3            10
 
@@ -38,8 +38,8 @@ uint16_t pwm_duty = 0;      // Safely start with no commanded motor motion
 unsigned char pwm_direction = 1;  // Initialize motor for forward motion
 _PIN* PWM_I1 = &D[8];       // Input 1 to motor driver chip
 _PIN* PWM_I2 = &D[7];       // Input 2 to motor driver chip
-long DUTY_MAX = 65536;  // Value used for converting between uint16_t
+long DUTY_MAX = 65536;      // Value used for converting between uint16_t
                             // fractional representations and float percentages.
-// Terminal CLEAR sequence
-char clear [5]  = {27, '[', '2', 'J', 0};
+
+char clear[5]  = {27, '[', '2', 'J', 0};  // Terminal CLEAR sequence
 

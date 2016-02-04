@@ -8,14 +8,14 @@
 #include "pin.h"
 #include "spi.h"
 #include "oc.h"
-#include "spi_test.h"
 #include "uart.h"
+#include "control.h"
 
 
 WORD enc_readReg(WORD address) {
     WORD cmd, result;
-    cmd.w = 0x4000|address.w;    // set 2nd MSB to 1 for a read
-    cmd.w |= parity(cmd.w)<<15;  // calculate even parity for
+    cmd.w = 0x4000|address.w;      // set 2nd MSB to 1 for a read
+    cmd.w |= parity(cmd.w) << 15;  // calculate even parity for
 
     pin_clear(SPI_CS);
     spi_transfer(&spi1, cmd.b[1]);
@@ -36,50 +36,50 @@ void VendorRequests(void) {
     switch (USB_setup.bRequest) {
         case TOGGLE_LED1:
             led_toggle(&led1);
-            BD[EP0IN].bytecount = 0;         // set EP0 IN byte count to 0
-            BD[EP0IN].status = 0xC8;         // send packet as DATA1, set UOWN bit
+            BD[EP0IN].bytecount = 0;  // set EP0 IN byte count to 0
+            BD[EP0IN].status = 0xC8;  // send packet as DATA1, set UOWN bit
             break;
         case TOGGLE_LED2:
             led_toggle(&led2);
-            BD[EP0IN].bytecount = 0;         // set EP0 IN byte count to 0
-            BD[EP0IN].status = 0xC8;         // send packet as DATA1, set UOWN bit
+            BD[EP0IN].bytecount = 0;  // set EP0 IN byte count to 0
+            BD[EP0IN].status = 0xC8;  // send packet as DATA1, set UOWN bit
             break;
         case READ_SW1:
             BD[EP0IN].address[0] = (uint8_t)sw_read(&sw1);
-            BD[EP0IN].bytecount = 1;         // set EP0 IN byte count to 1
-            BD[EP0IN].status = 0xC8;         // send packet as DATA1, set UOWN bit
+            BD[EP0IN].bytecount = 1;  // set EP0 IN byte count to 1
+            BD[EP0IN].status = 0xC8;  // send packet as DATA1, set UOWN bit
             break;
         case ENC_READ_REG:
             result = enc_readReg(USB_setup.wValue);
             BD[EP0IN].address[0] = result.b[0];
             BD[EP0IN].address[1] = result.b[1];
-            BD[EP0IN].bytecount = 2;         // set EP0 IN byte count to 1
-            BD[EP0IN].status = 0xC8;         // send packet as DATA1, set UOWN bit
+            BD[EP0IN].bytecount = 2;  // set EP0 IN byte count to 1
+            BD[EP0IN].status = 0xC8;  // send packet as DATA1, set UOWN bit
             break;
         case TOGGLE_LED3:
             led_toggle(&led3);
-            BD[EP0IN].bytecount = 0;         // set EP0 IN byte count to 0
-            BD[EP0IN].status = 0xC8;         // send packet as DATA1, set UOWN bit
+            BD[EP0IN].bytecount = 0;  // set EP0 IN byte count to 0
+            BD[EP0IN].status = 0xC8;  // send packet as DATA1, set UOWN bit
             break;
         case READ_SW2:
             BD[EP0IN].address[0] = (uint8_t)sw_read(&sw2);
-            BD[EP0IN].bytecount = 1;         // set EP0 IN byte count to 1
-            BD[EP0IN].status = 0xC8;         // send packet as DATA1, set UOWN bit
+            BD[EP0IN].bytecount = 1;  // set EP0 IN byte count to 1
+            BD[EP0IN].status = 0xC8;  // send packet as DATA1, set UOWN bit
             break;
         case READ_SW3:
             BD[EP0IN].address[0] = (uint8_t)sw_read(&sw3);
-            BD[EP0IN].bytecount = 1;         // set EP0 IN byte count to 1
-            BD[EP0IN].status = 0xC8;         // send packet as DATA1, set UOWN bit
+            BD[EP0IN].bytecount = 1;  // set EP0 IN byte count to 1
+            BD[EP0IN].status = 0xC8;  // send packet as DATA1, set UOWN bit
             break;
         default:
-            USB_error_flags |= 0x01;    // set Request Error Flag
+            USB_error_flags |= 0x01;  // set Request Error Flag
     }
 }
 
 void VendorRequestsIn(void) {
     switch (USB_request.setup.bRequest) {
         default:
-            USB_error_flags |= 0x01;                    // set Request Error Flag
+            USB_error_flags |= 0x01;  // set Request Error Flag
     }
 }
 
@@ -93,69 +93,6 @@ void VendorRequestsOut(void) {
 //        default:
 //            USB_error_flags |= 0x01;                    // set Request Error Flag
 //    }
-}
-
-void spi_parse_data(uint16_t data, unsigned char *angle_array) {
-    unsigned char data_size = 16;  // Size of input data (in bits)
-    unsigned char this_bit;
-    unsigned char par;
-    unsigned char ef;
-    unsigned char par_count = 0;
-    int i = 0;
-    printf("spi_parse_data DATA: %d\r\n", data);
-    printf("INCOMING BINARY RAW\r\n");
-    for (i; i < data_size; ++i) {
-        this_bit = data & (1 << i) ? 1:0;
-        printf("%d", this_bit);
-        if (i == 0) {
-            // Even parity bit
-            par = this_bit;
-        } else if (i == 1) {
-            // Error flag
-            ef = this_bit;
-        } else if (i > 1 && i > data_size) {
-            // Transmitted data [14 bits]
-            angle_array[i-2] = this_bit;
-            if (this_bit == 1)
-                par_count++;
-        }
-    }
-    printf("\r\nEND BINARY RAW\r\n");
-    // Evaluate transmission
-    if (par != par_count) {
-        printf("%s\r\n", "ERR: Angle measurement parity error.");
-    }
-    if (ef == 1) {
-        printf("%s\r\n", "ERR: Error flag thrown by AS5048 angle sensor.");
-    }
-    // int angle_array_int;
-    // sscanf(angle_array, "%d", &angle_array_int);
-    // printf("ANGLE ARRAY: %d\r\n", i);
-}
-
-void spi_send_READ(_SPI *self) {
-    spi_transfer(self, spi_READ1);
-    spi_transfer(self, spi_READ2);
-}
-
-uint16_t spi_send_NOP_read_data(_SPI *self) {
-    uint8_t msb = spi_transfer(self, spi_NOP12);
-    uint8_t lsb = spi_transfer(self, spi_NOP12);
-    printf("MSB %d | LSB %d\r\n", msb, lsb);
-    return (uint16_t)((msb << 8) | lsb);
-}
-
-void read_angle_sensor(unsigned char *angle_array) {
-    printf("Reading angle sensor...\r\n");
-    pin_clear(SPI_CS);  // Assert CS LOW
-    spi_send_READ(spi_inst);
-    pin_set(SPI_CS);  // Assert CS HIGH
-    pin_clear(SPI_CS);  // Reassert CS LOW
-    // Retrieve raw angle data
-    uint16_t raw_angle = spi_send_NOP_read_data(spi_inst);
-    printf("RAW ANGLE READ:%d\r\n", raw_angle);
-    spi_parse_data(raw_angle, angle_array);
-    pin_set(SPI_CS);
 }
 
 uint16_t pwm_duty_pct_to_int(float *percent) {
@@ -204,8 +141,6 @@ void pwm_set_direction(unsigned char direction) {
 }
 
 void setup(void) {
-    // printf("%s", clear);
-    printf("START\r\n");
     // Initialize PIC24 modules.
     init_clock();
     init_ui();
@@ -225,15 +160,16 @@ void setup(void) {
     timer_setPeriod(&timer2, 0.75);  // Timer for LED operation/status blink
     timer_start(&timer1);
     timer_start(&timer2);
-    
+
 
     // Configure dual PWM signals for bidirectional motor control
     oc_pwm(&oc1, PWM_I1, NULL, pwm_freq, pwm_duty);
     oc_pwm(&oc2, PWM_I2, NULL, pwm_freq, pwm_duty);
 
-    InitUSB();                              // initialize the USB registers and serial interface engine
-    while (USB_USWSTAT!=CONFIG_STATE) {     // while the peripheral is not configured...
-        ServiceUSB();                       // ...service USB requests
+    InitUSB();                              // initialize the USB registers and
+                                            // serial interface engine
+    while (USB_USWSTAT != CONFIG_STATE) {   // while periph. is not configured,
+        ServiceUSB();                       // service USB requests
     }
 }
 
@@ -249,7 +185,6 @@ int main(void) {
             // Blink green light to show normal operation.
             timer_lower(&timer2);
             led_toggle(&led2);
-            printf("%s\r\n", "Operating...");
         }
         if (timer_flag(&timer1)) {
             // PWM Test area. Change motor speed every second, looping
@@ -264,6 +199,7 @@ int main(void) {
             pwm_duty_index = (pwm_duty_index + 1) % 4;
         }
         if (!sw_read(&sw2)) {
+            // If switch 2 is pressed, the UART output terminal is cleared.
             printf("%s", clear);
         }
         ServiceUSB();

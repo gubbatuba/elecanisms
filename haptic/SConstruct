@@ -1,39 +1,40 @@
-env = Environment(PIC = '24FJ128GB206', 
-                  CC = 'xc16-gcc', 
-                  PROGSUFFIX = '.elf', 
-                  CFLAGS = '-g -omf=elf -x c -mcpu=$PIC', 
-                  LINKFLAGS = '-omf=elf -mcpu=$PIC -Wl,--script="app_p24FJ128GB206.gld"', 
-                  CPPPATH = '../lib')
+env = Environment(PIC='24FJ128GB206',
+                  CC='xc16-gcc',
+                  PROGSUFFIX='.elf',
+                  CFLAGS='-g -omf=elf -x c -mcpu=$PIC',
+                  LINKFLAGS='-omf=elf -mcpu=$PIC -Wl,--script="app_p24FJ128GB206.gld"',
+                  CPPPATH='../lib')
 env.PrependENVPath('PATH', '/opt/microchip/xc16/v1.25/bin')
 
-bin2hex = Builder(action = 'xc16-bin2hex $SOURCE -omf=elf',
-                  suffix = 'hex', 
-                  src_suffix = 'elf')
-env.Append(BUILDERS = {'Hex' : bin2hex})
-list = Builder(action = 'xc16-objdump -S -D $SOURCE > $TARGET', 
-               suffix = 'lst', 
-               src_suffix = 'elf')
-env.Append(BUILDERS = {'List' : list})
+bin2hex = Builder(action='xc16-bin2hex $SOURCE -omf=elf',
+                  suffix='hex',
+                  src_suffix='elf')
+env.Append(BUILDERS={'Hex': bin2hex})
+list = Builder(action='xc16-objdump -S -D $SOURCE > $TARGET',
+               suffix='lst',
+               src_suffix='elf')
+env.Append(BUILDERS={'List': list})
 
-env.Program('haptic', [
-      'haptic.c',
-      '../lib/timer.c',
-      '../lib/ui.c'
-   ]
-)
+env.Program('haptic', ['haptic.c',
+                       '../lib/timer.c',
+                       '../lib/ui.c'
+                      ]
+           )
 
-env.Program('spi_test', ['spi_test.c',
-                        '../lib/common.c',
-                        'usb.c',
-                        'descriptors.c',
-                           '../lib/timer.c',
-                           '../lib/ui.c',
-                           '../lib/pin.c',
-                           '../lib/spi.c',
-                           '../lib/oc.c',
-                           '../lib/uart.c',
-                           ])
+env.Program('control', ['control.c',
+                         '../lib/common.c',
+                         '../lib/usb.c',
+                         'usb_descriptors.c',
+                         '../lib/timer.c',
+                         '../lib/ui.c',
+                         '../lib/pin.c',
+                         '../lib/spi.c',
+                         '../lib/oc.c',
+                         '../lib/uart.c',
+                        ]
+           )
 
 env.Hex('haptic')
 env.List('haptic')
-env.Hex('spi_test')
+env.Hex('control')
+env.List('control')

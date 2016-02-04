@@ -2,7 +2,8 @@
 import usb.core
 import time
 
-class encodertest:
+
+class USBCommunications(object):
 
     def __init__(self):
         self.TOGGLE_LED1 = 1
@@ -12,9 +13,10 @@ class encodertest:
         self.TOGGLE_LED3 = 8
         self.READ_SW2 = 9
         self.READ_SW3 = 10
-        self.dev = usb.core.find(idVendor = 0x6666, idProduct = 0x0003)
+        self.dev = usb.core.find(idVendor=0x6666, idProduct=0x0003)
         if self.dev is None:
-            raise ValueError('no USB device found matching idVendor = 0x6666 and idProduct = 0x0003')
+            raise ValueError(
+                'no USB device found matching idVendor = 0x6666 and idProduct = 0x0003')
         self.dev.set_configuration()
 
 # AS5048A Register Map
@@ -74,7 +76,8 @@ class encodertest:
 
     def enc_readReg(self, address):
         try:
-            ret = self.dev.ctrl_transfer(0xC0, self.ENC_READ_REG, address, 0, 2)
+            ret = self.dev.ctrl_transfer(
+                0xC0, self.ENC_READ_REG, address, 0, 2)
         except usb.core.USBError:
             print "Could not send ENC_READ_REG vendor request."
         else:
