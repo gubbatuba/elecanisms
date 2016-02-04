@@ -177,7 +177,7 @@ int main(void) {
     setup();
     unsigned char angle_array[14];  // LSB will be angle_array[0]
 
-    float pwm_duty_array[4] = {0.06, 0.06, 0.06, 0.06};
+    float pwm_duty_array[4] = {0.40, 0.41, 0.42, 0.43};
     uint8_t pwm_duty_index = 0;
     pwm_set_duty(pwm_duty_array[pwm_duty_index]);
     while (1) {
@@ -193,9 +193,9 @@ int main(void) {
             led_toggle(&led3);
             printf("Set PWM duty to %f.\r\n", pwm_duty_array[pwm_duty_index]);
             pwm_set_duty(pwm_duty_array[pwm_duty_index]);
-            if (pwm_duty_index == 2) {
-                pwm_set_direction(!pwm_direction);
-            }
+            // if (pwm_duty_index == 2) {
+            //     pwm_set_direction(!pwm_direction);
+            // }
             pwm_duty_index = (pwm_duty_index + 1) % 4;
         }
         if (!sw_read(&sw2)) {
