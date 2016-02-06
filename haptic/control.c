@@ -177,27 +177,29 @@ int main(void) {
     setup();
     unsigned char angle_array[14];  // LSB will be angle_array[0]
 
-    float pwm_duty_array[4] = {0.40, 0.41, 0.42, 0.43};
+    // float pwm_duty_array[4] = {0.40, 0.41, 0.42, 0.43};
+    // float pwm_duty_array[4] = {0.12, 0.12, 0, 0};
+
     uint8_t pwm_duty_index = 0;
-    pwm_set_duty(pwm_duty_array[pwm_duty_index]);
+    pwm_set_duty(0);
     while (1) {
         if (timer_flag(&timer2)) {
             // Blink green light to show normal operation.
             timer_lower(&timer2);
             led_toggle(&led2);
         }
-        if (timer_flag(&timer1)) {
-            // PWM Test area. Change motor speed every second, looping
-            // through an array of possible speeds (array length = 4)
-            timer_lower(&timer1);
-            led_toggle(&led3);
-            printf("Set PWM duty to %f.\r\n", pwm_duty_array[pwm_duty_index]);
-            pwm_set_duty(pwm_duty_array[pwm_duty_index]);
-            // if (pwm_duty_index == 2) {
-            //     pwm_set_direction(!pwm_direction);
-            // }
-            pwm_duty_index = (pwm_duty_index + 1) % 4;
-        }
+        // if (timer_flag(&timer1)) {
+        //     // PWM Test area. Change motor speed every second, looping
+        //     // through an array of possible speeds (array length = 4)
+        //     timer_lower(&timer1);
+        //     led_toggle(&led3);
+        //     printf("Set PWM duty to %f.\r\n", pwm_duty_array[pwm_duty_index]);
+        //     pwm_set_duty(pwm_duty_array[pwm_duty_index]);
+        //     // if (pwm_duty_index == 2) {
+        //     //     pwm_set_direction(!pwm_direction);
+        //     // }
+        //     pwm_duty_index = (pwm_duty_index + 1) % 4;
+        // }
         if (!sw_read(&sw2)) {
             // If switch 2 is pressed, the UART output terminal is cleared.
             printf("%s", clear);

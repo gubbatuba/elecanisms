@@ -12,7 +12,7 @@ uint8_t spi_NOP12 = 0x00;
 */
 uint8_t spi_READ1 = 0xFF;   // First half of READ transmission [MSB]
 uint8_t spi_READ2 = 0xFF;   // Second half of READ transmission [LSB]
-float spi_freq = 24000;     // 24000 is chosen fairly arbitrarily. Revise later.
+float spi_freq = 9500000;     // 24000 is chosen fairly arbitrarily. Revise later.
 _SPI* spi_inst = &spi1;     // SPI instance (address of)
 uint8_t spi_mode = 1;
 
@@ -33,7 +33,7 @@ _PIN* SPI_CS = &D[3];       // Chip select pin
 #define REG_MAG_ADDR        0x3FFE
 
 // PWM Configuration
-float pwm_freq = 30000;       // ~245Hz is minimum
+float pwm_freq = 245;       // ~245Hz is minimum
 uint16_t pwm_duty = 0;      // Safely start with no commanded motor motion
 unsigned char pwm_direction = 1;  // Initialize motor for forward motion
 _PIN* PWM_I1 = &D[8];       // Input 1 to motor driver chip
