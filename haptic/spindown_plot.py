@@ -6,7 +6,7 @@ import csv
 from usb_haptic import USBCommunications
 
 def ticks_to_degrees(ticks):
-    return ticks/45.3
+    return ticks/45.511111
 
 def read_encoder():
     encoder_reading = USB_COMMS.enc_readReg(0x3FFF)
@@ -22,8 +22,8 @@ USB_COMMS = USBCommunications()
 #     "degrees": None
 # }
 test_time = 10
-sample_period = .005
-csvname = 'spindowndata_005_12.csv'
+sample_period = .001
+csvname = 'spindowndata_001_95_fwd.csv'
 time_start = time.clock()
 elapsed_time = 0
 data = []

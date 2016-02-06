@@ -181,7 +181,8 @@ int main(void) {
     // float pwm_duty_array[4] = {0.12, 0.12, 0, 0};
 
     uint8_t pwm_duty_index = 0;
-    pwm_set_duty(0);
+    pwm_set_direction(!pwm_direction);
+    pwm_set_duty(.95);
     while (1) {
         if (timer_flag(&timer2)) {
             // Blink green light to show normal operation.
