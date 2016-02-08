@@ -182,7 +182,7 @@ int main(void) {
 
     uint8_t pwm_duty_index = 0;
     pwm_set_direction(!pwm_direction);
-    pwm_set_duty(.95);
+    pwm_set_duty(0);
     while (1) {
         if (timer_flag(&timer2)) {
             // Blink green light to show normal operation.

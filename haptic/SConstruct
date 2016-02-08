@@ -16,9 +16,16 @@ list = Builder(action='xc16-objdump -S -D $SOURCE > $TARGET',
 env.Append(BUILDERS={'List': list})
 
 env.Program('haptic', ['haptic.c',
-                       '../lib/timer.c',
-                       '../lib/ui.c'
-                      ]
+                         '../lib/common.c',
+                         '../lib/usb.c',
+                         'usb_descriptors.c',
+                         '../lib/timer.c',
+                         '../lib/ui.c',
+                         '../lib/pin.c',
+                         '../lib/spi.c',
+                         '../lib/oc.c',
+                         '../lib/uart.c',
+                        ]
            )
 
 env.Program('control', ['control.c',
