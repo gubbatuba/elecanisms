@@ -43,3 +43,7 @@ long DUTY_MAX = 65536;      // Value used for converting between uint16_t
 
 char clear[5]  = {27, '[', '2', 'J', 0};  // Terminal CLEAR sequence
 
+// Angle Conversion
+// convrate = 715.15
+uint16_t head_center = 0;
+

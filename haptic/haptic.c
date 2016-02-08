@@ -28,6 +28,39 @@ WORD enc_readReg(WORD address) {
     return result;
 }
 
+uint16_t spi_read_ticks() {
+    uint8_t data[2];
+    WORD raw_data = enc_readReg((WORD)(0x3FFF));
+    // printf("%d\r\n", raw_data);
+    // printf("UNMASKED DATA: %X.%X \r\n", raw_data.b[1], raw_data.b[0]);
+    data[1] = raw_data.b[1] & (0x3F);
+    data[0] = raw_data.b[0];
+    // printf("MASKED DATA: %X.%X \r\n", data[1], data[0]);
+    uint16_t full_data = ((uint16_t)data[1] << 8) | data[0];
+    // printf("ENCODER TICKS: %d\r\n", full_data);
+    return full_data;
+}
+
+// void spi_read_angle() {
+// 
+// }
+
+double encoder_counter(uint16_t current_ticks, uint16_t previous_ticks, double previous_count) {
+    int difference = (int)(current_ticks) - (int)(previous_ticks);
+    if (difference > 8192) {
+        difference = 16384 - difference;
+    }
+    if (difference < -8192) {
+        difference = -16384 - difference;
+    }
+    double new_count = previous_count + (double)(difference);
+    return new_count;
+}
+
+uint16_t init_elephant_head() {
+    head_center = spi_read_ticks();
+}
+
 void VendorRequests(void) {
     WORD32 address;
     WORD result;
@@ -181,19 +214,26 @@ int main(void) {
 
     // pwm_set_direction(!pwm_direction);
     // pwm_set_duty(0);
+    printf("%s\n", "STARTING LOOP");
+    double encoder_master_count = 0;
+    uint16_t current_ticks = 0;
+    uint16_t previous_ticks = spi_read_ticks();
     while (1) {
         if (timer_flag(&timer2)) {
             // Blink green light to show normal operation.
             timer_lower(&timer2);
             led_toggle(&led2);
+            printf("%s\r\n", "BLINK LIGHT");
+            printf("MASTER COUNT: %f\r\n", encoder_master_count);
         }
         if (!sw_read(&sw2)) {
             // If switch 2 is pressed, the UART output terminal is cleared.
             printf("%s", clear);
         }
-
+        current_ticks = spi_read_ticks();
+        encoder_master_count = encoder_counter(current_ticks, previous_ticks, encoder_master_count);
+        previous_ticks = current_ticks;
         ServiceUSB();
-
     }
 }
 
