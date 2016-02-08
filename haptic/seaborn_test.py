@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
-csvname = 'spindowndata_005_12.csv'
+csvname = 'data/spindowndata_005_12.csv'
 df = pd.read_csv(csvname, index_col=0)
 df.plot()
 plt.show()

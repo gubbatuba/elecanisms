@@ -4,6 +4,9 @@
 #include "ui.h"
 #include "timer.h"
 
+// FOR MINIPROJECT 1, PLEASE SEE CONTROL.C.
+// THIS IS UNUSED IN MINIPROJECT 1.
+
 int16_t main(void) {
     init_clock();
     init_ui();

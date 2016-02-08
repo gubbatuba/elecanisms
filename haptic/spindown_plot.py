@@ -23,7 +23,7 @@ USB_COMMS = USBCommunications()
 # }
 test_time = 10
 sample_period = .001
-csvname = 'spindowndata_001_95_fwd.csv'
+csvname = 'data/spindowndata_001_95_fwd.csv'
 time_start = time.clock()
 elapsed_time = 0
 data = []
