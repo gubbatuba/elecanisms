@@ -41,10 +41,7 @@ uint16_t spi_read_ticks() {
     return full_data;
 }
 
-// void spi_read_angle() {
-// 
-// }
-
+//Find the number of ticks moved
 double encoder_counter(uint16_t current_ticks, uint16_t previous_ticks, double previous_count) {
     int difference = (int)(current_ticks) - (int)(previous_ticks);
     if (difference > 8192) {
@@ -57,8 +54,10 @@ double encoder_counter(uint16_t current_ticks, uint16_t previous_ticks, double p
     return new_count;
 }
 
-uint16_t init_elephant_head() {
-    head_center = spi_read_ticks();
+//Change master count to degs
+double count_to_deg(double new_count) {
+	double degs = new_count/714.15;
+	return degs; 
 }
 
 void VendorRequests(void) {
@@ -216,6 +215,7 @@ int main(void) {
     // pwm_set_duty(0);
     printf("%s\n", "STARTING LOOP");
     double encoder_master_count = 0;
+    double degs = 0;
     uint16_t current_ticks = 0;
     uint16_t previous_ticks = spi_read_ticks();
     while (1) {
@@ -225,6 +225,7 @@ int main(void) {
             led_toggle(&led2);
             printf("%s\r\n", "BLINK LIGHT");
             printf("MASTER COUNT: %f\r\n", encoder_master_count);
+            printf("MASTER DEGS: %f\r\n", degs);
         }
         if (!sw_read(&sw2)) {
             // If switch 2 is pressed, the UART output terminal is cleared.
@@ -232,6 +233,7 @@ int main(void) {
         }
         current_ticks = spi_read_ticks();
         encoder_master_count = encoder_counter(current_ticks, previous_ticks, encoder_master_count);
+        degs = count_to_deg(encoder_master_count);
         previous_ticks = current_ticks;
         ServiceUSB();
     }
