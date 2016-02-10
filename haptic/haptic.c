@@ -60,6 +60,26 @@ double count_to_deg(double new_count) {
 	return degs; 
 }
 
+void motor_control(double degs, double target_degs){
+	double diff = degs - target_degs;
+	float new_duty;
+	unsigned char direction;
+	if (diff > 0){
+		direction = 1;
+		new_duty = 0.20;
+	}
+	else if (diff < 0){
+		direction = 0;
+		new_duty = 0.20;
+	}
+	else {
+		direction = pwm_direction;
+		new_duty = 0.0;
+	}
+	pwm_set_direction(direction);
+	pwm_set_duty(new_duty);
+}
+
 void VendorRequests(void) {
     WORD32 address;
     WORD result;
@@ -136,7 +156,7 @@ float pwm_duty_int_to_pct(uint16_t *frac) {
 
 void pwm_set_duty(float percent) {
     uint16_t duty_frac = pwm_duty_pct_to_int(&percent);
-    printf("Computed duty frac %d from pct %f.\r\n", duty_frac, percent);
+    // printf("Computed duty frac %d from pct %f.\r\n", duty_frac, percent);
     if (pwm_direction == 1) {
         pin_write(PWM_I1, duty_frac);
     } else {
@@ -218,6 +238,7 @@ int main(void) {
     double degs = 0;
     uint16_t current_ticks = 0;
     uint16_t previous_ticks = spi_read_ticks();
+    double target_degs = 35;
     while (1) {
         if (timer_flag(&timer2)) {
             // Blink green light to show normal operation.
@@ -234,6 +255,7 @@ int main(void) {
         current_ticks = spi_read_ticks();
         encoder_master_count = encoder_counter(current_ticks, previous_ticks, encoder_master_count);
         degs = count_to_deg(encoder_master_count);
+        motor_control(degs, target_degs);
         previous_ticks = current_ticks;
         ServiceUSB();
     }
