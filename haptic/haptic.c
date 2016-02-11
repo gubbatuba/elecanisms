@@ -63,14 +63,15 @@ double count_to_deg(double new_count) {
 void motor_control(double degs, double target_degs){
 	double diff = degs - target_degs;
 	float new_duty;
+	double threshold = 1;
 	unsigned char direction;
-	if (diff > 0){
+	if (diff > threshold){
 		direction = 1;
-		new_duty = 0.20;
+		new_duty = 0.85;
 	}
-	else if (diff < 0){
+	else if (diff < -threshold){
 		direction = 0;
-		new_duty = 0.20;
+		new_duty = 0.85;
 	}
 	else {
 		direction = pwm_direction;
@@ -175,13 +176,13 @@ void pwm_set_direction(unsigned char direction) {
         pwm_direction = direction;  // Update pwm_direction
         if (direction == 1) {
             // If 1, PWM_I1 should PWM, PWM_I2 should be 0.
-            printf("Setting motor direction FORWARD...\r\n");
+            // printf("Setting motor direction FORWARD...\r\n");
             prev_duty = pin_read(PWM_I2);
             pin_write(PWM_I2, (uint16_t)(0));
             pin_write(PWM_I1, prev_duty);
         } else if (direction == 0) {
             // If 0, PWM_I1 should 0, PWM_I2 should be 1.
-            printf("Setting motor direction REVERSE...\r\n");
+            // printf("Setting motor direction REVERSE...\r\n");
             prev_duty = pin_read(PWM_I1);
             pin_write(PWM_I1, (uint16_t)(0));
             pin_write(PWM_I2, prev_duty);
@@ -245,7 +246,7 @@ int main(void) {
             timer_lower(&timer2);
             led_toggle(&led2);
             printf("%s\r\n", "BLINK LIGHT");
-            printf("MASTER COUNT: %f\r\n", encoder_master_count);
+            // printf("MASTER COUNT: %f\r\n", encoder_master_count);
             printf("MASTER DEGS: %f\r\n", degs);
         }
         if (!sw_read(&sw2)) {
