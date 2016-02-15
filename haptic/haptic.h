@@ -38,6 +38,8 @@ uint16_t pwm_duty = 0;      // Safely start with no commanded motor motion
 unsigned char pwm_direction = 1;  // Initialize motor for forward motion
 _PIN* PWM_I1 = &D[8];       // Input 1 to motor driver chip
 _PIN* PWM_I2 = &D[7];       // Input 2 to motor driver chip
+
+_PIN* MOTOR_VOLTAGE = &A[0];       // Motor control voltage measurement
 long DUTY_MAX = 65536;      // Value used for converting between uint16_t
                             // fractional representations and float percentages.
 

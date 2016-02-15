@@ -220,14 +220,17 @@ void setup(void) {
 
     // Configure & start timers used.
     timer_setPeriod(&timer1, 1);
-    timer_setPeriod(&timer2, 0.25);  // Timer for LED operation/status blink
+    timer_setPeriod(&timer2, 1);  // Timer for LED operation/status blink
+    timer_setPeriod(&timer3, 0.0005); //super fast timer!
     timer_start(&timer1);
     timer_start(&timer2);
+    timer_start(&timer3);
 
 
     // Configure dual PWM signals for bidirectional motor control
     oc_pwm(&oc1, PWM_I1, NULL, pwm_freq, pwm_duty);
     oc_pwm(&oc2, PWM_I2, NULL, pwm_freq, pwm_duty);
+    pin_analogIn(MOTOR_VOLTAGE);
 
     InitUSB();                              // initialize the USB registers and
                                             // serial interface engine
@@ -259,6 +262,15 @@ int main(void) {
             printf("%s\r\n", "BLINK LIGHT");
             printf("MASTER COUNT: %f\r\n", encoder_master_count);
             printf("MASTER DEGS: %f\r\n", degs);
+            printf("MOTOR VOLTS: %d\r\n", pin_read(MOTOR_VOLTAGE));
+        }
+        if (timer_flag(&timer3)) {
+            timer_lower(&timer3);
+            current_ticks = spi_read_ticks();
+            encoder_master_count = encoder_counter(current_ticks, previous_ticks, encoder_master_count);
+            degs = count_to_deg(encoder_master_count);
+            motor_control(degs, target_degs);
+            previous_ticks = current_ticks;
         }
         if (!sw_read(&sw2)) {
             // If switch 2 is pressed, the UART output terminal is cleared.
