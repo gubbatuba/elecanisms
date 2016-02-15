@@ -9,7 +9,7 @@
 #include "spi.h"
 #include "oc.h"
 #include "uart.h"
-#include "haptic.h"
+#include "haptic_spring.h"
 
 WORD enc_readReg(WORD address) {
     WORD cmd, result;
@@ -26,6 +26,44 @@ WORD enc_readReg(WORD address) {
     result.b[0] = spi_transfer(&spi1, 0);
     pin_set(SPI_CS);
     return result;
+}
+
+uint16_t spi_read_ticks() {
+    uint8_t data[2];
+    WORD raw_data = enc_readReg((WORD)(0x3FFF));
+    // printf("%d\r\n", raw_data);
+    // printf("UNMASKED DATA: %X.%X \r\n", raw_data.b[1], raw_data.b[0]);
+    data[1] = raw_data.b[1] & (0x3F);
+    data[0] = raw_data.b[0];
+    // printf("MASKED DATA: %X.%X \r\n", data[1], data[0]);
+    uint16_t full_data = ((uint16_t)data[1] << 8) | data[0];
+    // printf("ENCODER TICKS: %d\r\n", full_data);
+    return full_data;
+}
+
+//Find the number of ticks moved
+double encoder_counter(uint16_t current_ticks, uint16_t previous_ticks, double previous_count) {
+    // pwm_direction = 1, we should see increase in ticks. Current - Previous should be 
+    int difference = (int)(current_ticks) - (int)(previous_ticks);
+    // printf("DIFF: %d\n", difference);
+    // if (difference >= 10) {
+    //     if (pwm_direction == 0) {
+    //         difference = -16384 + difference;
+    //     }
+    // } else if (difference <= -10) {
+    //     if (pwm_direction == 1) {
+    //         difference = 16384 + difference;
+    //     }
+    // }
+    //Find the number of ticks moved
+    if (difference > 8192) {
+        difference = 16384 - difference;
+    }
+    if (difference < -8192) {
+        difference = -16384 - difference;
+    }
+    double new_count = previous_count + (double)(difference);
+    return new_count;
 }
 
 uint16_t pwm_duty_pct_to_int(float *percent) {
@@ -73,42 +111,51 @@ void pwm_set_direction(unsigned char direction) {
     }
 }
 
-uint16_t spi_read_ticks() {
-    uint8_t data[2];
-    WORD raw_data = enc_readReg((WORD)(0x3FFF));
-    // printf("%d\r\n", raw_data);
-    // printf("UNMASKED DATA: %X.%X \r\n", raw_data.b[1], raw_data.b[0]);
-    data[1] = raw_data.b[1] & (0x3F);
-    data[0] = raw_data.b[0];
-    // printf("MASKED DATA: %X.%X \r\n", data[1], data[0]);
-    uint16_t full_data = ((uint16_t)data[1] << 8) | data[0];
-    // printf("ENCODER TICKS: %d\r\n", full_data);
-    return full_data;
+double read_motor_current() {
+    uint16_t raw_volts = pin_read(MOTOR_VOLTAGE) >> 6; // Shift to get only the 10 bits from the ADC
+    double motor_current = raw_volts * MAX_ANALOG_VOLTAGE/CURRENT_CONV_COEF;
+    return motor_current;
 }
 
-//Find the number of ticks moved
-double encoder_counter(uint16_t current_ticks, uint16_t previous_ticks, double previous_count) {
-    // pwm_direction = 1, we should see increase in ticks. Current - Previous should be 
-    int difference = (int)(current_ticks) - (int)(previous_ticks);
-    // printf("DIFF: %d\n", difference);
-    // if (difference >= 10) {
-    //     if (pwm_direction == 0) {
-    //         difference = -16384 + difference;
-    //     }
-    // } else if (difference <= -10) {
-    //     if (pwm_direction == 1) {
-    //         difference = 16384 + difference;
-    //     }
-    // }
-    //Find the number of ticks moved
-    if (difference > 8192) {
-        difference = 16384 - difference;
+double PID_control(PID *self) {
+    double error = self->set_point - self->position;
+    double deriv = (self->position - self->prev_position)/self->dt;
+    self->integ_state += error;
+    if (self->integ_state > self->integ_max) {
+        self->integ_state = self->integ_max;
+    } else if (self->integ_state < self->integ_min) {
+        self->integ_state = self->integ_min;
+    };
+    double pterm = self->Kp * error;
+    double iterm = self->Ki * self->integ_state;
+    double dterm = self->Kd * deriv;
+    self->prev_position = self->position;
+
+    return pterm + iterm + dterm;
+}
+
+void pid_to_pwm(double pid_command, double set_point) {
+    if (set_point > 0) {
+        pwm_set_direction(1);
+    } else {
+        pwm_set_direction(0);
     }
-    if (difference < -8192) {
-        difference = -16384 - difference;
-    }
-    double new_count = previous_count + (double)(difference);
-    return new_count;
+    pwm_set_duty(pwm_duty + pid_command);
+}
+
+double spring_model(double theta) {
+    // Uses Hooke's law for torsional spring to model expected torque for 
+    // our virtual spring.
+    return -SPRING_CONSTANT * theta;
+}
+
+double convert_motor_torque(double current) {
+    // Converts motor current to effective torque
+    if (pwm_direction == 0) {
+        return -(current * MOTOR_TORQUE_COEF);
+    } else {
+        return current * MOTOR_TORQUE_COEF;
+    } 
 }
 
 //Change master count to degs
@@ -221,12 +268,21 @@ void setup(void) {
     // Configure & start timers used.
     timer_setPeriod(&timer1, 1);
     timer_setPeriod(&timer2, 1);  // Timer for LED operation/status blink
-    timer_setPeriod(&timer3, 0.0005); //super fast timer!
+    timer_setPeriod(&timer3, LOOP_TIME); // Timer for main control loop
     timer_start(&timer1);
     timer_start(&timer2);
     timer_start(&timer3);
 
-
+    // Configure motor current conversion coefficient
+    CURRENT_CONV_COEF = MAX_ADC_OUTPUT * MOTOR_VOLTAGE_RESISTOR;
+    cur_control.Kp = 1;
+    cur_control.Kd = 1;
+    cur_control.Ki = 1;
+    cur_control.dt = LOOP_TIME;
+    cur_control.integ_min = -100;
+    cur_control.integ_max = 100;
+    cur_control.integ_state = 0;
+    cur_control.prev_position = convert_motor_torque(read_motor_current());
     // Configure dual PWM signals for bidirectional motor control
     oc_pwm(&oc1, PWM_I1, NULL, pwm_freq, pwm_duty);
     oc_pwm(&oc2, PWM_I2, NULL, pwm_freq, pwm_duty);
@@ -254,33 +310,38 @@ int main(void) {
     uint16_t current_ticks = 0;
     uint16_t previous_ticks = spi_read_ticks();
     double target_degs = 10;
+    double motor_current = 0;  // current through motor in amperes
+    double pid_command = 0;
+    
     while (1) {
         if (timer_flag(&timer2)) {
             // Blink green light to show normal operation.
             timer_lower(&timer2);
             led_toggle(&led2);
-            printf("%s\r\n", "BLINK LIGHT");
-            printf("MASTER COUNT: %f\r\n", encoder_master_count);
-            printf("MASTER DEGS: %f\r\n", degs);
-            printf("MOTOR VOLTS: %d\r\n", pin_read(MOTOR_VOLTAGE));
+            // printf("%s\r\n", "BLINK LIGHT");
+            // printf("MASTER COUNT: %f\r\n", encoder_master_count);
+            // printf("MASTER DEGS: %f\r\n", degs);
+            // printf("MOTOR VOLTS: %d\r\n", pin_read(MOTOR_VOLTAGE));
         }
+
         if (timer_flag(&timer3)) {
             timer_lower(&timer3);
             current_ticks = spi_read_ticks();
             encoder_master_count = encoder_counter(current_ticks, previous_ticks, encoder_master_count);
             degs = count_to_deg(encoder_master_count);
-            motor_control(degs, target_degs);
+            cur_control.set_point = spring_model(degs);  // Outputs theoretical torque predicted by spring model
+            motor_current = read_motor_current();
+            cur_control.position = convert_motor_torque(motor_current);
+            pid_command = PID_control(&cur_control);
+            pid_to_pwm(pid_command, cur_control.set_point);
+
             previous_ticks = current_ticks;
         }
+
         if (!sw_read(&sw2)) {
             // If switch 2 is pressed, the UART output terminal is cleared.
             printf("%s", clear);
         }
-        current_ticks = spi_read_ticks();
-        encoder_master_count = encoder_counter(current_ticks, previous_ticks, encoder_master_count);
-        degs = count_to_deg(encoder_master_count);
-        motor_control(degs, target_degs);
-        previous_ticks = current_ticks;
         ServiceUSB();
     }
 }

@@ -3,18 +3,9 @@
 */
 
 // SPI Configuration
-uint8_t spi_NOP12 = 0x00;
-/* SPI READ command:
-    PAR = 1;
-    RWn = 1;
-    Address = 0x3FFF = b1111111111111;
-    Read command = 0xFFFF = b111111111111111;
-*/
-uint8_t spi_READ1 = 0xFF;   // First half of READ transmission [MSB]
-uint8_t spi_READ2 = 0xFF;   // Second half of READ transmission [LSB]
-float spi_freq = 9500000;     // 24000 is chosen fairly arbitrarily. Revise later.
+static const float spi_freq = 9500000;
 _SPI* spi_inst = &spi1;     // SPI instance (address of)
-uint8_t spi_mode = 1;
+static const uint8_t spi_mode = 1;
 
 _PIN* SPI_SCK = &D[2];      // Serial Clock pin
 _PIN* SPI_MOSI = &D[0];     // MOSI pin
@@ -40,12 +31,40 @@ _PIN* PWM_I1 = &D[8];       // Input 1 to motor driver chip
 _PIN* PWM_I2 = &D[7];       // Input 2 to motor driver chip
 
 _PIN* MOTOR_VOLTAGE = &A[0];       // Motor control voltage measurement
-long DUTY_MAX = 65536;      // Value used for converting between uint16_t
+static const long DUTY_MAX = 65536;  // Value used for converting uint16_t
                             // fractional representations and float percentages.
 
-char clear[5]  = {27, '[', '2', 'J', 0};  // Terminal CLEAR sequence
+static const char clear[5]  = {27, '[', '2', 'J', 0};  // Term. CLEAR sequence
 
 // Angle Conversion
 // convrate = 715.15
-uint16_t head_center = 0;
+
+// Motor Current Conversion
+static const double MAX_ANALOG_VOLTAGE = 3;
+static const double MAX_ADC_OUTPUT = 1023;
+static const double MOTOR_VOLTAGE_RESISTOR = 0.075;  // Ohms
+double CURRENT_CONV_COEF;
+
+// PID Control
+typedef struct {
+    double Kp;
+    double Ki;
+    double Kd;
+    double set_point;
+    double dt;
+    double position;
+    double prev_position;
+    double integ_state;
+    double integ_max, integ_min;
+} PID;
+
+// Spring model
+double SPRING_CONSTANT = 1;
+double MOTOR_TORQUE_COEF = 1;
+double PWM_MIN = 0.25;
+double PWM_MAX = 0.99;
+
+#define LOOP_TIME 0.005
+
+PID cur_control;
 
