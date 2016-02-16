@@ -20,6 +20,7 @@ _PIN* SPI_CS = &D[3];       // Chip select pin
 #define TOGGLE_LED3         8
 #define READ_SW2            9
 #define READ_SW3            10
+#define SET_PID             11
 
 #define REG_MAG_ADDR        0x3FFE
 
@@ -60,7 +61,10 @@ typedef struct {
 
 // Spring model
 double SPRING_CONSTANT = 1;
-double MOTOR_TORQUE_COEF = 1;
+
+// Motor Configuration
+// http://www.jameco.com/Jameco/Products/ProdDS/238473.PDF
+double MOTOR_TORQUE_COEF = 1.06;
 double PWM_MIN = 0.25;
 double PWM_MAX = 0.99;
 

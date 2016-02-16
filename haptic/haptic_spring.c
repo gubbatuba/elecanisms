@@ -226,6 +226,11 @@ void VendorRequests(void) {
             BD[EP0IN].bytecount = 1;  // set EP0 IN byte count to 1
             BD[EP0IN].status = 0xC8;  // send packet as DATA1, set UOWN bit
             break;
+        case SET_PID:
+            // set_pid_constants(USB_setup.wValue);
+            BD[EP0IN].bytecount = 0;
+            BD[EP0IN].status = 0xc8;
+
         default:
             USB_error_flags |= 0x01;  // set Request Error Flag
     }

@@ -13,6 +13,7 @@ class USBCommunications(object):
         self.TOGGLE_LED3 = 8
         self.READ_SW2 = 9
         self.READ_SW3 = 10
+        self.SET_PID = 11
         self.dev = usb.core.find(idVendor=0x6666, idProduct=0x0003)
         if self.dev is None:
             raise ValueError(
@@ -69,6 +70,15 @@ class USBCommunications(object):
     def read_sw3(self):
         try:
             ret = self.dev.ctrl_transfer(0xC0, self.READ_SW3, 0, 0, 1)
+        except usb.core.USBError:
+            print "Could not send READ_SW3 vendor request."
+        else:
+            return int(ret[0])
+
+    def set_pid(self, Kp, Ki, Kd):
+        struct.pack()
+        try:
+            ret = self.dev.ctrl_transfer(0xC0, self.SET_PID, 0, 0, 1)
         except usb.core.USBError:
             print "Could not send READ_SW3 vendor request."
         else:
