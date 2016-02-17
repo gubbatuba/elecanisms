@@ -33,8 +33,9 @@ _PIN* SPI_CS = &D[3];       // Chip select pin
 #define REG_MAG_ADDR        0x3FFE
 
 // PWM Configuration
-float pwm_freq = 3000;       // ~245Hz is minimum, 35000 was original
+float pwm_freq = 8000;       // ~245Hz is minimum, 35000 was original
 uint16_t pwm_duty = 0;      // Safely start with no commanded motor motion
+float pwm_pct_duty = 0;
 unsigned char pwm_direction = 1;  // Initialize motor for forward motion
 _PIN* PWM_I1 = &D[8];       // Input 1 to motor driver chip
 _PIN* PWM_I2 = &D[7];       // Input 2 to motor driver chip
@@ -49,3 +50,22 @@ char clear[5]  = {27, '[', '2', 'J', 0};  // Terminal CLEAR sequence
 // convrate = 715.15
 uint16_t head_center = 0;
 
+// PID Control
+typedef struct {
+    float Kp;
+    float Ki;
+    float Kd;
+    float set_point;
+    float dt;
+    float position;
+    float prev_position;
+    float integ_state;
+    float integ_max, integ_min;
+} PID;
+PID pos_control;
+#define LOOP_TIME 0.0005
+float PWM_MIN = 0;
+float PWM_MAX = 0.70;
+#define KP .1
+#define KI 0
+#define KD 0

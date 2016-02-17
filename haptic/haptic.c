@@ -1,6 +1,7 @@
 #include <p24FJ128GB206.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include "config.h"
 #include "common.h"
 #include "ui.h"
@@ -90,6 +91,7 @@ uint16_t spi_read_ticks() {
 double encoder_counter(uint16_t current_ticks, uint16_t previous_ticks, double previous_count) {
     // pwm_direction = 1, we should see increase in ticks. Current - Previous should be 
     int difference = (int)(current_ticks) - (int)(previous_ticks);
+    // printf("diff: %d\r\n", difference);
     // printf("DIFF: %d\n", difference);
     // if (difference >= 10) {
     //     if (pwm_direction == 0) {
@@ -107,7 +109,9 @@ double encoder_counter(uint16_t current_ticks, uint16_t previous_ticks, double p
     if (difference < -8192) {
         difference = -16384 - difference;
     }
+    // printf("diff; %d\r\n", difference);
     double new_count = previous_count + (double)(difference);
+    // printf("diff; %f\r\n", (double)(difference));
     return new_count;
 }
 
@@ -135,6 +139,50 @@ void motor_control(double degs, double target_degs) {
     }
     pwm_set_direction(direction);
     pwm_set_duty(new_duty);
+}
+
+float PID_control(PID *self) {
+    float error = self->set_point - self->position;
+    float deriv = (self->position - self->prev_position);
+    self->integ_state += error;
+    if (self->integ_state > self->integ_max) {
+        self->integ_state = self->integ_max;
+    } else if (self->integ_state < self->integ_min) {
+        self->integ_state = self->integ_min;
+    };
+    float pterm = self->Kp * error;
+    float iterm = self->Ki * self->integ_state;
+    float dterm = self->Kd * deriv;
+    self->prev_position = self->position;
+
+    return pterm + iterm + dterm;
+}
+
+float pid_to_pwm(float pid_command, float pct_duty) {
+    float new_duty = pct_duty + pid_command;
+    bool in_boundary = (new_duty > -PWM_MIN) && (new_duty < PWM_MIN);
+    if ((new_duty < pwm_duty) && in_boundary) {
+        // Coerce to -PWM_MIN
+        new_duty = -PWM_MIN;
+    } else if ((new_duty > pwm_duty) && in_boundary) {
+        // Coerce to PWM_MIN
+        new_duty = PWM_MIN;
+    } else if (new_duty > PWM_MAX) {
+        new_duty = PWM_MAX;
+    } else if (new_duty < -PWM_MAX) {
+        new_duty = -PWM_MAX;
+    }
+    // printf("NEWDUTY: %f\r\n", new_duty);
+    if (new_duty > 0) {
+        pwm_set_direction(0);
+    } else {
+        pwm_set_direction(1);
+    }
+    // printf("%f\r\n",new_duty );
+    float set_duty = fabsf(new_duty);
+    // printf("%f\r\n", set_duty );
+    pwm_set_duty(set_duty);
+    return set_duty;
 }
 
 void VendorRequests(void) {
@@ -220,17 +268,25 @@ void setup(void) {
 
     // Configure & start timers used.
     timer_setPeriod(&timer1, 1);
-    timer_setPeriod(&timer2, 1);  // Timer for LED operation/status blink
-    timer_setPeriod(&timer3, 0.0005); //super fast timer!
+    timer_setPeriod(&timer2, .4);  // Timer for LED operation/status blink
+    timer_setPeriod(&timer3, LOOP_TIME); //super fast timer!
     timer_start(&timer1);
     timer_start(&timer2);
     timer_start(&timer3);
 
+    pos_control.Kp = KP;
+    pos_control.Kd = KD;
+    pos_control.Ki = KI;
+    pos_control.dt = LOOP_TIME;
+    pos_control.integ_min = -100;
+    pos_control.integ_max = 100;
+    pos_control.integ_state = 0;
+    pos_control.prev_position = 0;
 
     // Configure dual PWM signals for bidirectional motor control
     oc_pwm(&oc1, PWM_I1, NULL, pwm_freq, pwm_duty);
     oc_pwm(&oc2, PWM_I2, NULL, pwm_freq, pwm_duty);
-    pin_analogIn(MOTOR_VOLTAGE);
+    // pin_analogIn(MOTOR_VOLTAGE);
 
     InitUSB();                              // initialize the USB registers and
                                             // serial interface engine
@@ -248,12 +304,16 @@ int main(void) {
 
     // pwm_set_direction(!pwm_direction);
     // pwm_set_duty(0);
+    float pos_array[5] = {-20, -10, 0, 10, 20};
+    uint8_t pos_i = 0;
     printf("%s\n", "STARTING LOOP");
     double encoder_master_count = 0;
     double degs = 0;
     uint16_t current_ticks = 0;
     uint16_t previous_ticks = spi_read_ticks();
-    double target_degs = 10;
+    // double target_degs = 10;
+    pos_control.set_point = 20;
+    float pid_command = 0;
     while (1) {
         if (timer_flag(&timer2)) {
             // Blink green light to show normal operation.
@@ -262,15 +322,14 @@ int main(void) {
             printf("%s\r\n", "BLINK LIGHT");
             printf("MASTER COUNT: %f\r\n", encoder_master_count);
             printf("MASTER DEGS: %f\r\n", degs);
-            printf("MOTOR VOLTS: %d\r\n", pin_read(MOTOR_VOLTAGE));
+            // printf("MOTOR VOLTS: %d\r\n", pin_read(MOTOR_VOLTAGE));
+            printf("PID INFO: SP: %f, POS: %f, CMD: %f, duty: %f, dir %f.\r\n", pos_control.set_point, pos_control.position, pid_command, pwm_pct_duty, pwm_direction);
         }
-        if (timer_flag(&timer3)) {
-            timer_lower(&timer3);
-            current_ticks = spi_read_ticks();
-            encoder_master_count = encoder_counter(current_ticks, previous_ticks, encoder_master_count);
-            degs = count_to_deg(encoder_master_count);
-            motor_control(degs, target_degs);
-            previous_ticks = current_ticks;
+
+        if (timer_flag(&timer1)) {
+            timer_lower(&timer1);
+            pos_control.set_point = pos_array[pos_i];
+            pos_i = (pos_i + 1) % 5;
         }
         if (!sw_read(&sw2)) {
             // If switch 2 is pressed, the UART output terminal is cleared.
@@ -279,7 +338,9 @@ int main(void) {
         current_ticks = spi_read_ticks();
         encoder_master_count = encoder_counter(current_ticks, previous_ticks, encoder_master_count);
         degs = count_to_deg(encoder_master_count);
-        motor_control(degs, target_degs);
+        pos_control.position = degs;
+        pid_command = PID_control(&pos_control);
+        pwm_pct_duty = pid_to_pwm(pid_command, pwm_pct_duty);
         previous_ticks = current_ticks;
         ServiceUSB();
     }

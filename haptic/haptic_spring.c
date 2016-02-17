@@ -42,7 +42,7 @@ uint16_t spi_read_ticks() {
 }
 
 //Find the number of ticks moved
-double encoder_counter(uint16_t current_ticks, uint16_t previous_ticks, double previous_count) {
+float encoder_counter(uint16_t current_ticks, uint16_t previous_ticks, float previous_count) {
     // pwm_direction = 1, we should see increase in ticks. Current - Previous should be 
     int difference = (int)(current_ticks) - (int)(previous_ticks);
     // printf("DIFF: %d\n", difference);
@@ -62,7 +62,7 @@ double encoder_counter(uint16_t current_ticks, uint16_t previous_ticks, double p
     if (difference < -8192) {
         difference = -16384 - difference;
     }
-    double new_count = previous_count + (double)(difference);
+    float new_count = previous_count + (float)(difference);
     return new_count;
 }
 
@@ -111,30 +111,32 @@ void pwm_set_direction(unsigned char direction) {
     }
 }
 
-double read_motor_current() {
+float read_motor_current() {
     uint16_t raw_volts = pin_read(MOTOR_VOLTAGE) >> 6; // Shift to get only the 10 bits from the ADC
-    double motor_current = raw_volts * MAX_ANALOG_VOLTAGE/CURRENT_CONV_COEF;
+    // printf("%d\r\n", raw_volts);
+    float motor_volts = (float)(raw_volts)/MAX_ADC_OUTPUT * MAX_ANALOG_VOLTAGE * .1; // * .1
+    float motor_current = motor_volts/MOTOR_VOLTAGE_RESISTOR;
     return motor_current;
 }
 
-double PID_control(PID *self) {
-    double error = self->set_point - self->position;
-    double deriv = (self->position - self->prev_position)/self->dt;
+float PID_control(PID *self) {
+    float error = self->set_point - self->position;
+    float deriv = (self->position - self->prev_position)/self->dt;
     self->integ_state += error;
     if (self->integ_state > self->integ_max) {
         self->integ_state = self->integ_max;
     } else if (self->integ_state < self->integ_min) {
         self->integ_state = self->integ_min;
     };
-    double pterm = self->Kp * error;
-    double iterm = self->Ki * self->integ_state;
-    double dterm = self->Kd * deriv;
+    float pterm = self->Kp * error;
+    float iterm = self->Ki * self->integ_state;
+    float dterm = self->Kd * deriv;
     self->prev_position = self->position;
 
     return pterm + iterm + dterm;
 }
 
-void pid_to_pwm(double pid_command, double set_point) {
+void pid_to_pwm(float pid_command, float set_point) {
     if (set_point > 0) {
         pwm_set_direction(1);
     } else {
@@ -143,13 +145,13 @@ void pid_to_pwm(double pid_command, double set_point) {
     pwm_set_duty(pwm_duty + pid_command);
 }
 
-double spring_model(double theta) {
+float spring_model(float theta) {
     // Uses Hooke's law for torsional spring to model expected torque for 
     // our virtual spring.
     return -SPRING_CONSTANT * theta;
 }
 
-double convert_motor_torque(double current) {
+float convert_motor_torque(float current) {
     // Converts motor current to effective torque
     if (pwm_direction == 0) {
         return -(current * MOTOR_TORQUE_COEF);
@@ -159,15 +161,15 @@ double convert_motor_torque(double current) {
 }
 
 //Change master count to degs
-double count_to_deg(double new_count) {
-    double degs = new_count/714.15;
+float count_to_deg(float new_count) {
+    float degs = new_count/714.15;
     return degs; 
 }
 
-void motor_control(double degs, double target_degs) {
-    double diff = degs - target_degs;
+void motor_control(float degs, float target_degs) {
+    float diff = degs - target_degs;
     float new_duty;
-    double threshold = 1;
+    float threshold = 1;
     unsigned char direction;
 
     if (diff > threshold) {
@@ -280,9 +282,9 @@ void setup(void) {
 
     // Configure motor current conversion coefficient
     CURRENT_CONV_COEF = MAX_ADC_OUTPUT * MOTOR_VOLTAGE_RESISTOR;
-    cur_control.Kp = 1;
-    cur_control.Kd = 1;
-    cur_control.Ki = 1;
+    cur_control.Kp = KP;
+    cur_control.Kd = KD;
+    cur_control.Ki = KI;
     cur_control.dt = LOOP_TIME;
     cur_control.integ_min = -100;
     cur_control.integ_max = 100;
@@ -310,13 +312,13 @@ int main(void) {
     // pwm_set_direction(!pwm_direction);
     // pwm_set_duty(0);
     printf("%s\n", "STARTING LOOP");
-    double encoder_master_count = 0;
-    double degs = 0;
+    float encoder_master_count = 0;
+    float degs = 0;
     uint16_t current_ticks = 0;
     uint16_t previous_ticks = spi_read_ticks();
-    double target_degs = 10;
-    double motor_current = 0;  // current through motor in amperes
-    double pid_command = 0;
+    float target_degs = 10;
+    float motor_current = 0;  // current through motor in amperes
+    float pid_command = 0;
     
     while (1) {
         if (timer_flag(&timer2)) {
@@ -327,20 +329,12 @@ int main(void) {
             // printf("MASTER COUNT: %f\r\n", encoder_master_count);
             // printf("MASTER DEGS: %f\r\n", degs);
             // printf("MOTOR VOLTS: %d\r\n", pin_read(MOTOR_VOLTAGE));
+            // printf("PID INFO: SP: %f, POS: %f, CMD: %f, duty: %f, dir %f, current %f.\r\n", cur_control.set_point, cur_control.position, pid_command, pwm_duty, pwm_direction, motor_current);
+
         }
 
         if (timer_flag(&timer3)) {
             timer_lower(&timer3);
-            current_ticks = spi_read_ticks();
-            encoder_master_count = encoder_counter(current_ticks, previous_ticks, encoder_master_count);
-            degs = count_to_deg(encoder_master_count);
-            cur_control.set_point = spring_model(degs);  // Outputs theoretical torque predicted by spring model
-            motor_current = read_motor_current();
-            cur_control.position = convert_motor_torque(motor_current);
-            pid_command = PID_control(&cur_control);
-            pid_to_pwm(pid_command, cur_control.set_point);
-
-            previous_ticks = current_ticks;
         }
 
         if (!sw_read(&sw2)) {
@@ -348,6 +342,16 @@ int main(void) {
             printf("%s", clear);
         }
         ServiceUSB();
+        current_ticks = spi_read_ticks();
+        encoder_master_count = encoder_counter(current_ticks, previous_ticks, encoder_master_count);
+        degs = count_to_deg(encoder_master_count);
+        cur_control.set_point = spring_model(degs);  // Outputs theoretical torque predicted by spring model
+        motor_current = read_motor_current();
+        cur_control.position = convert_motor_torque(motor_current);
+        pid_command = PID_control(&cur_control);
+        pid_to_pwm(pid_command, cur_control.set_point);
+
+        previous_ticks = current_ticks;
     }
 }
 

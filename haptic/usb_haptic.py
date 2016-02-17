@@ -1,6 +1,7 @@
 
 import usb.core
 import time
+import struct
 
 
 class USBCommunications(object):
@@ -14,6 +15,7 @@ class USBCommunications(object):
         self.READ_SW2 = 9
         self.READ_SW3 = 10
         self.SET_PID = 11
+        self.SEND_NUM = 12
         self.dev = usb.core.find(idVendor=0x6666, idProduct=0x0003)
         if self.dev is None:
             raise ValueError(
@@ -76,7 +78,6 @@ class USBCommunications(object):
             return int(ret[0])
 
     def set_pid(self, Kp, Ki, Kd):
-        struct.pack()
         try:
             ret = self.dev.ctrl_transfer(0xC0, self.SET_PID, 0, 0, 1)
         except usb.core.USBError:
@@ -88,6 +89,17 @@ class USBCommunications(object):
         try:
             ret = self.dev.ctrl_transfer(
                 0xC0, self.ENC_READ_REG, address, 0, 2)
+        except usb.core.USBError:
+            print "Could not send ENC_READ_REG vendor request."
+        else:
+            return ret
+
+    def send_num(self, num):
+        msg = 'test'
+        msg = struct.pack('i', num)
+        try:
+            ret = self.dev.ctrl_transfer(
+                0x40, self.SEND_NUM, 23, 223424,33)
         except usb.core.USBError:
             print "Could not send ENC_READ_REG vendor request."
         else:

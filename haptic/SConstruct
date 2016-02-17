@@ -93,6 +93,19 @@ env.Program('control', ['control.c',
                         ]
            )
 
+
+env.Program('how_to_usb', ['how_to_usb.c',
+                         '../lib/common.c',
+                         '../lib/usb.c',
+                         'usb_descriptors.c',
+                         '../lib/timer.c',
+                         '../lib/ui.c',
+                         '../lib/pin.c',
+                         '../lib/uart.c',
+                        ]
+           )
+
+
 env.Hex('haptic')
 env.Hex('haptic_spring')
 env.Hex('haptic_damper')
@@ -101,3 +114,5 @@ env.Hex('haptic_wall')
 env.List('haptic')
 env.Hex('control')
 env.List('control')
+env.Hex('how_to_usb')
+env.List('how_to_usb')

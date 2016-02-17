@@ -26,7 +26,7 @@ _PIN* SPI_CS = &D[3];       // Chip select pin
 
 // PWM Configuration
 float pwm_freq = 3000;       // ~245Hz is minimum, 35000 was original
-uint16_t pwm_duty = 0;      // Safely start with no commanded motor motion
+float pwm_duty = 0;      // Safely start with no commanded motor motion
 unsigned char pwm_direction = 1;  // Initialize motor for forward motion
 _PIN* PWM_I1 = &D[8];       // Input 1 to motor driver chip
 _PIN* PWM_I2 = &D[7];       // Input 2 to motor driver chip
@@ -41,34 +41,36 @@ static const char clear[5]  = {27, '[', '2', 'J', 0};  // Term. CLEAR sequence
 // convrate = 715.15
 
 // Motor Current Conversion
-static const double MAX_ANALOG_VOLTAGE = 3;
-static const double MAX_ADC_OUTPUT = 1023;
-static const double MOTOR_VOLTAGE_RESISTOR = 0.075;  // Ohms
-double CURRENT_CONV_COEF;
+static const float MAX_ANALOG_VOLTAGE = 3;
+static const float MAX_ADC_OUTPUT = 1023;
+static const float MOTOR_VOLTAGE_RESISTOR = 0.075;  // Ohms
+float CURRENT_CONV_COEF;
 
 // PID Control
 typedef struct {
-    double Kp;
-    double Ki;
-    double Kd;
-    double set_point;
-    double dt;
-    double position;
-    double prev_position;
-    double integ_state;
-    double integ_max, integ_min;
+    float Kp;
+    float Ki;
+    float Kd;
+    float set_point;
+    float dt;
+    float position;
+    float prev_position;
+    float integ_state;
+    float integ_max, integ_min;
 } PID;
+PID cur_control;
 
 // Spring model
-double SPRING_CONSTANT = 1;
+float SPRING_CONSTANT = 1;
 
 // Motor Configuration
 // http://www.jameco.com/Jameco/Products/ProdDS/238473.PDF
-double MOTOR_TORQUE_COEF = 1.06;
-double PWM_MIN = 0.25;
-double PWM_MAX = 0.99;
+float MOTOR_TORQUE_COEF = 1.06;
+// float PWM_MIN = 0.25;
+// float PWM_MAX = 0.99;
 
 #define LOOP_TIME 0.005
 
-PID cur_control;
-
+#define KP 1
+#define KI 0
+#define KD 0
