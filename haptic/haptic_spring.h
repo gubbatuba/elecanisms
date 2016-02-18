@@ -71,6 +71,6 @@ float MOTOR_TORQUE_COEF = 1.06;
 
 #define LOOP_TIME 0.005
 
-#define KP 1
+#define KP .1
 #define KI 0
 #define KD 0

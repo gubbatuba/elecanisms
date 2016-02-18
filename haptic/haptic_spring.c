@@ -114,8 +114,10 @@ void pwm_set_direction(unsigned char direction) {
 float read_motor_current() {
     uint16_t raw_volts = pin_read(MOTOR_VOLTAGE) >> 6; // Shift to get only the 10 bits from the ADC
     // printf("%d\r\n", raw_volts);
-    float motor_volts = (float)(raw_volts)/MAX_ADC_OUTPUT * MAX_ANALOG_VOLTAGE * .1; // * .1
-    float motor_current = motor_volts/MOTOR_VOLTAGE_RESISTOR;
+
+    float motor_volts = (float)(raw_volts)/MAX_ADC_OUTPUT * MAX_ANALOG_VOLTAGE; // Should match scope
+    printf("Raw: %d, Comp: %f\r\n", raw_volts, motor_volts);
+    float motor_current = (motor_volts * 0.1)/MOTOR_VOLTAGE_RESISTOR;
     return motor_current;
 }
 
@@ -319,7 +321,7 @@ int main(void) {
     float target_degs = 10;
     float motor_current = 0;  // current through motor in amperes
     float pid_command = 0;
-    
+    pwm_set_duty(.50);
     while (1) {
         if (timer_flag(&timer2)) {
             // Blink green light to show normal operation.
@@ -329,7 +331,7 @@ int main(void) {
             // printf("MASTER COUNT: %f\r\n", encoder_master_count);
             // printf("MASTER DEGS: %f\r\n", degs);
             // printf("MOTOR VOLTS: %d\r\n", pin_read(MOTOR_VOLTAGE));
-            // printf("PID INFO: SP: %f, POS: %f, CMD: %f, duty: %f, dir %f, current %f.\r\n", cur_control.set_point, cur_control.position, pid_command, pwm_duty, pwm_direction, motor_current);
+            printf("PID INFO: SP: %f, POS: %f, CMD: %f, duty: %f, dir %f, current %f, degs %f.\r\n", cur_control.set_point, cur_control.position, pid_command, pwm_duty, pwm_direction, motor_current, degs);
 
         }
 
@@ -343,14 +345,17 @@ int main(void) {
         }
         ServiceUSB();
         current_ticks = spi_read_ticks();
+        // printf("MASTCOUNT: %d\r\n", current_ticks);
         encoder_master_count = encoder_counter(current_ticks, previous_ticks, encoder_master_count);
+        // printf("MASTCOUNT: %d\r\n", encoder_master_count);
         degs = count_to_deg(encoder_master_count);
+        // printf("DEGS: %f\r\n", degs);
         cur_control.set_point = spring_model(degs);  // Outputs theoretical torque predicted by spring model
         motor_current = read_motor_current();
         cur_control.position = convert_motor_torque(motor_current);
-        pid_command = PID_control(&cur_control);
-        pid_to_pwm(pid_command, cur_control.set_point);
-
+        printf("Th: %f, Ac: %f, I: %f\r\n", cur_control.set_point, cur_control.position, motor_current);
+        // pid_command = PID_control(&cur_control);
+        // pid_to_pwm(pid_command, cur_control.set_point);
         previous_ticks = current_ticks;
     }
 }

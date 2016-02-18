@@ -66,6 +66,6 @@ PID pos_control;
 #define LOOP_TIME 0.0005
 float PWM_MIN = 0;
 float PWM_MAX = 0.70;
-#define KP .1
+#define KP .2
 #define KI 0
 #define KD 0
