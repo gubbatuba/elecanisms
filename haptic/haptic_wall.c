@@ -106,16 +106,21 @@ void wall(double degs, double wall_deg) {
 	double diff = degs - wall_deg;
 	float new_duty;
 	unsigned char direction;
-	double direction_threshold = 0;
-	double threshold = 2;
-
-	if ((diff > direction_threshold) && (diff < (threshold))){
+	double direction_threshold = 1;
+	double threshold = 3;
+	// left bound
+	if ((diff < direction_threshold) && (diff > (threshold))){
 		direction = 1;
-		new_duty = 0.60;
-	} else if ((diff > -direction_threshold) && (diff < (-threshold))){
+		new_duty = 0.90;
+		printf("left bound\r\n");	
+	} 
+	// right bound
+	else if ((diff < -direction_threshold) && (diff > (-threshold))){
 		direction = 0;
-		new_duty = 0.60;
-	} else {
+		new_duty = 0.90;
+		printf("right bound\r\n");
+	} 
+	else {
 		new_duty = 0.0;
 	}
     pwm_set_direction(direction);
@@ -259,7 +264,7 @@ int main(void) {
     printf("%s\n", "STARTING LOOP");
     double encoder_master_count = 0;
     double degs = 0;
-    double wall_deg = 30;
+    double target_degs = 10;
     uint16_t current_ticks = 0;
     uint16_t previous_ticks = spi_read_ticks();
     while (1) {
@@ -278,7 +283,7 @@ int main(void) {
         current_ticks = spi_read_ticks();
         encoder_master_count = encoder_counter(current_ticks, previous_ticks, encoder_master_count);
         degs = count_to_deg(encoder_master_count);
-        motor_control(degs, target_degs);
+        wall(degs, target_degs);
         previous_ticks = current_ticks;
         ServiceUSB();
     }
