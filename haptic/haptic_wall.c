@@ -90,16 +90,6 @@ uint16_t spi_read_ticks() {
 double encoder_counter(uint16_t current_ticks, uint16_t previous_ticks, double previous_count) {
     // pwm_direction = 1, we should see increase in ticks. Current - Previous should be 
     int difference = (int)(current_ticks) - (int)(previous_ticks);
-    // printf("DIFF: %d\n", difference);
-    // if (difference >= 10) {
-    //     if (pwm_direction == 0) {
-    //         difference = -16384 + difference;
-    //     }
-    // } else if (difference <= -10) {
-    //     if (pwm_direction == 1) {
-    //         difference = 16384 + difference;
-    //     }
-    // }
     //Find the number of ticks moved
     if (difference > 8192) {
         difference = 16384 - difference;
@@ -111,10 +101,31 @@ double encoder_counter(uint16_t current_ticks, uint16_t previous_ticks, double p
     return new_count;
 }
 
+void wall(double degs, double wall_deg) {
+	// creates a "wall" to hit
+	double diff = degs - wall_deg;
+	float new_duty;
+	unsigned char direction;
+	double direction_threshold = 0;
+	double threshold = 2;
+
+	if ((diff > direction_threshold) && (diff < (threshold))){
+		direction = 1;
+		new_duty = 0.60;
+	} else if ((diff > -direction_threshold) && (diff < (-threshold))){
+		direction = 0;
+		new_duty = 0.60;
+	} else {
+		new_duty = 0.0;
+	}
+    pwm_set_direction(direction);
+    pwm_set_duty(new_duty);
+}
+
 //Change master count to degs
 double count_to_deg(double new_count) {
     double degs = new_count/714.15;
-    return degs; 
+    return degs;
 }
 
 void motor_control(double degs, double target_degs) {
@@ -248,9 +259,9 @@ int main(void) {
     printf("%s\n", "STARTING LOOP");
     double encoder_master_count = 0;
     double degs = 0;
+    double wall_deg = 30;
     uint16_t current_ticks = 0;
     uint16_t previous_ticks = spi_read_ticks();
-    double target_degs = 10;
     while (1) {
         if (timer_flag(&timer2)) {
             // Blink green light to show normal operation.
