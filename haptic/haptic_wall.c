@@ -109,7 +109,7 @@ void wall(double degs, double wall_deg) {
 	double direction_threshold = 1;
 	double threshold = 3;
 	// left bound
-	if ((diff < direction_threshold) && (diff > (threshold))){
+	if ((diff > direction_threshold) && (diff < (threshold))){
 		direction = 1;
 		new_duty = 0.90;
 		printf("left bound\r\n");	
