@@ -13,14 +13,13 @@ _PIN* SPI_MISO = &D[1];     // MISO pin
 _PIN* SPI_CS = &D[3];       // Chip select pin
 
 #define TOGGLE_LED1         1
-#define TOGGLE_LED2         2
-#define READ_SW1            3
-#define ENC_WRITE_REG       4
-#define ENC_READ_REG        5
-#define TOGGLE_LED3         8
-#define READ_SW2            9
-#define READ_SW3            10
-#define SET_PID             11
+#define ENC_READ_REG        2
+#define SET_KP              3
+#define SET_KI              4
+#define SET_KD              5
+#define GET_MOTOR_CURRENT   6
+#define GET_SETPOINT        7
+#define SET_DUTY            8
 
 #define REG_MAG_ADDR        0x3FFE
 
@@ -60,6 +59,15 @@ typedef struct {
 } PID;
 PID cur_control;
 
+typedef struct {
+    uint16_t raw_volts;
+    float volts;
+    float current;
+} MOTOR;
+MOTOR motor;
+
+
+uint8_t interrupted = 0;
 // Spring model
 float SPRING_CONSTANT = 1;
 

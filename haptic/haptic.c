@@ -345,4 +345,3 @@ int main(void) {
         ServiceUSB();
     }
 }
-
