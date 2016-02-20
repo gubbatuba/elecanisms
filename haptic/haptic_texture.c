@@ -50,8 +50,53 @@ double encoder_counter(uint16_t current_ticks, uint16_t previous_ticks, double p
     if (difference < -8192) {
         difference = -16384 - difference;
     }
+    if (current_ticks > previous_ticks){
+        current_direction = 0;
+    }
+    if (current_ticks < previous_ticks){
+        current_direction = 1;
+    }
     double new_count = previous_count + (double)(difference);
     return new_count;
+
+}
+
+void texture(double degs){
+    double light_stick_deg = 30;
+    double heavy_slip_deg = -10;
+    double light_slip_deg = 10;
+    double heavy_stick_deg = -30;
+    double speed_bump = 0;
+    double dist = 4;
+    double bump_dist = 2;
+    float new_duty;
+    unsigned char direction = pwm_direction;
+    if ((degs > (light_stick_deg-dist)) && (degs < (light_stick_deg+dist))){
+        direction = (direction+1)%2;
+        new_duty = 0.65;
+        printf("light stick\r\n");  
+    } else if  ((degs > (heavy_stick_deg-dist)) && (degs < (heavy_stick_deg+dist))){
+        direction = (direction+1)%2;
+        new_duty = 0.95;
+        printf("heavy stick\r\n");  
+    } else if  ((degs > (light_slip_deg-dist)) && (degs < (light_slip_deg+dist))){
+        direction = current_direction;
+        new_duty = 0.65;
+        printf("light slip\r\n");  
+    } else if  ((degs > (heavy_slip_deg-dist)) && (degs < (heavy_slip_deg+dist))){
+        direction = current_direction;
+        new_duty = 0.85;
+        printf("heavy slip\r\n degs %f\r\n",degs );  
+    } else if  ((degs > (speed_bump-bump_dist)) && (degs < (speed_bump+bump_dist))){
+        direction = (direction+1)%2;
+        new_duty = 0.55;
+        printf("speed_bump\r\n degs %f\r\n",degs );  
+    } 
+    else {
+        new_duty = 0.0;
+    }
+    pwm_set_direction(direction);
+    pwm_set_duty(new_duty);
 }
 
 //Change master count to degs
@@ -245,7 +290,7 @@ int main(void) {
             // Blink green light to show normal operation.
             timer_lower(&timer2);
             led_toggle(&led2);
-            printf("%s\r\n", "BLINK LIGHT");
+            // printf("%s\r\n", "BLINK LIGHT");
             // printf("MASTER COUNT: %f\r\n", encoder_master_count);
             printf("MASTER DEGS: %f\r\n", degs);
         }
@@ -256,7 +301,7 @@ int main(void) {
         current_ticks = spi_read_ticks();
         encoder_master_count = encoder_counter(current_ticks, previous_ticks, encoder_master_count);
         degs = count_to_deg(encoder_master_count);
-        motor_control(degs, target_degs);
+        texture(degs);
         previous_ticks = current_ticks;
         ServiceUSB();
     }
