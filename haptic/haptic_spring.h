@@ -40,8 +40,8 @@ static const long DUTY_MAX = 65536;  // Value used for converting uint16_t
 
 static const char clear[5]  = {27, '[', '2', 'J', 0};  // Term. CLEAR sequence
 
-// Angle Conversion
-// convrate = 715.15
+// Position data
+float degs = 0;
 
 // Motor Current Conversion
 static const float MAX_ANALOG_VOLTAGE = 3;
@@ -89,3 +89,5 @@ _PIN* DEBUGD1 = &D[13];
 #define KP .5
 #define KI 0
 #define KD .01
+
+#define round(x) ((x)>=0?(uint16_t)((x)+0.5):(uint16_t)((x)-0.5))

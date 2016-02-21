@@ -19,6 +19,7 @@ class USBCommunications(object):
         self.SET_PID_I = 10
         self.SET_PID_D = 11
         self.SET_SPRING_CONSTANT = 12
+        self.READ_POSITION = 13
 
         self.divisor0 = 100
         self.dev = usb.core.find(idVendor=0x6666, idProduct=0x0003)
@@ -84,25 +85,29 @@ class USBCommunications(object):
 
     def set_pid_p(self, K):
         try:
-            ret = self.dev.ctrl_transfer(0x40, self.SET_PID_P, int(K * self.divisor0), self.divisor0)
+            ret = self.dev.ctrl_transfer(
+                0x40, self.SET_PID_P, int(K * self.divisor0), self.divisor0)
         except usb.core.USBError:
             print "Could not send SET_PID_P vendor request."
 
     def set_pid_i(self, K):
         try:
-            ret = self.dev.ctrl_transfer(0x40, self.SET_PID_I, int(K * self.divisor0), self.divisor0)
+            ret = self.dev.ctrl_transfer(
+                0x40, self.SET_PID_I, int(K * self.divisor0), self.divisor0)
         except usb.core.USBError:
             print "Could not send SET_PID_I vendor request."
 
     def set_pid_d(self, K):
         try:
-            ret = self.dev.ctrl_transfer(0x40, self.SET_PID_D, int(K * self.divisor0), self.divisor0)
+            ret = self.dev.ctrl_transfer(
+                0x40, self.SET_PID_D, int(K * self.divisor0), self.divisor0)
         except usb.core.USBError:
             print "Could not send SET_PID_D vendor request."
 
     def set_spring_constant(self, K):
         try:
-            ret = self.dev.ctrl_transfer(0x40, self.SET_SPRING_CONSTANT, int(K * self.divisor0), self.divisor0)
+            ret = self.dev.ctrl_transfer(
+                0x40, self.SET_SPRING_CONSTANT, int(K * self.divisor0), self.divisor0)
         except usb.core.USBError:
             print "Could not send SET_SPRING_CONSTANT vendor request."
 
@@ -114,6 +119,15 @@ class USBCommunications(object):
             print "Could not send ENC_READ_REG vendor request."
         else:
             return ret
+
+    def read_position(self):
+        try:
+            ret = self.dev.ctrl_transfer(0xC0, self.READ_POSITION, 0, 0, 2)
+        except usb.core.USBError:
+            print "Could not send GET_VALS vendor request."
+        else:
+            ret_value = int(ret[0]) + int(ret[1]) * 256
+            return ret_value - 50
 
     # def send_num(self, num):
     #     msg = 'test'

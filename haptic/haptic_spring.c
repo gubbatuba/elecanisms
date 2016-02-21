@@ -33,13 +33,9 @@ WORD enc_readReg(WORD address) {
 uint16_t spi_read_ticks() {
     uint8_t data[2];
     WORD raw_data = enc_readReg((WORD)(0x3FFF));
-    // printf("%d\r\n", raw_data);
-    // printf("UNMASKED DATA: %X.%X \r\n", raw_data.b[1], raw_data.b[0]);
     data[1] = raw_data.b[1] & (0x3F);
     data[0] = raw_data.b[0];
-    // printf("MASKED DATA: %X.%X \r\n", data[1], data[0]);
     uint16_t full_data = ((uint16_t)data[1] << 8) | data[0];
-    // printf("ENCODER TICKS: %d\r\n", full_data);
     return full_data;
 }
 
@@ -47,17 +43,6 @@ uint16_t spi_read_ticks() {
 float encoder_counter(uint16_t current_ticks, uint16_t previous_ticks, float previous_count) {
     // pwm_direction = 1, we should see increase in ticks. Current - Previous should be 
     int difference = (int)(current_ticks) - (int)(previous_ticks);
-    // printf("DIFF: %d\n", difference);
-    // if (difference >= 10) {
-    //     if (pwm_direction == 0) {
-    //         difference = -16384 + difference;
-    //     }
-    // } else if (difference <= -10) {
-    //     if (pwm_direction == 1) {
-    //         difference = 16384 + difference;
-    //     }
-    // }
-    //Find the number of ticks moved
     if (difference > 8192) {
         difference = 16384 - difference;
     }
@@ -117,10 +102,7 @@ void pwm_set_direction(unsigned char direction) {
 }
 
 void read_motor_current(MOTOR *mot) {
-    // uint16_t raw_volts = pin_read(MOTOR_VOLTAGE) >> 6; // Shift to get only the 10 bits from the ADC
-    // printf("%d\r\n", raw_volts);
     mot->volts = ((float)(mot->raw_volts)/MAX_ADC_OUTPUT * MAX_ANALOG_VOLTAGE) - 1.5; // Should match scope
-    // printf("Raw: %d, Comp: %f\r\n", raw_volts, motor_volts);
     mot->current = (mot->volts * 0.1)/MOTOR_VOLTAGE_RESISTOR;
 }
 
@@ -138,24 +120,18 @@ float PID_control(PID *self) {
     float iterm = self->Ki * self->integ_state;
     float dterm = self->Kd * deriv;
     self->prev_position = self->position;
-    // printf("PID. SP: %2f, POS: %2f, CMD: %2f\r\n", self->set_point, self->position, pterm + iterm + dterm);
     pin_clear(DEBUGD0);
     return pterm + iterm + dterm;
 }
 
 float pid_to_pwm(float pid_command, bool set_point_sign) {
-    // if (set_point > 0) {        // If we want "positive" torque
-    //     pwm_set_direction(1);
-    // } else {
-    //     pwm_set_direction(0);
-    // }
     float new_pwm = pwm_duty + pid_command;
     if (new_pwm > MAX_DUTY) {
         new_pwm = MAX_DUTY;
     } else if (new_pwm < 0) {
         new_pwm = 0;
     }
-    if (set_point_sign) {        // If we want "positive" torque
+    if (set_point_sign) {
         pwm_set_direction(0);
     } else {
         pwm_set_direction(1);
@@ -183,21 +159,46 @@ float convert_motor_torque(float current) {
 //Change master count to degs
 float count_to_deg(float new_count) {
     float degs = new_count/714.15;
-    // printf("%f\r\n", degs);
     return degs; 
 }
 
 void VendorRequests(void) {
     WORD32 address;
     WORD result;
+    WORD temp;
     uint16_t temp0, temp1;
 
     switch (USB_setup.bRequest) {
         WORD temp;
         case TOGGLE_LED1:
             led_toggle(&led1);
-            BD[EP0IN].bytecount = 0;  // set EP0 IN byte count to 0
-            BD[EP0IN].status = 0xC8;  // send packet as DATA1, set UOWN bit
+            BD[EP0IN].bytecount = 0;         // set EP0 IN byte count to 0
+            BD[EP0IN].status = 0xC8;         // send packet as DATA1, set UOWN bit
+            break;
+        case TOGGLE_LED2:
+            led_toggle(&led2);
+            BD[EP0IN].bytecount = 0;         // set EP0 IN byte count to 0
+            BD[EP0IN].status = 0xC8;         // send packet as DATA1, set UOWN bit
+            break;
+        case TOGGLE_LED3:
+            led_toggle(&led3);
+            BD[EP0IN].bytecount = 0;         // set EP0 IN byte count to 0
+            BD[EP0IN].status = 0xC8;         // send packet as DATA1, set UOWN bit
+            break;
+        case READ_SW1:
+            BD[EP0IN].address[0] = (uint8_t)sw_read(&sw1);
+            BD[EP0IN].bytecount = 1;         // set EP0 IN byte count to 1
+            BD[EP0IN].status = 0xC8;         // send packet as DATA1, set UOWN bit
+            break;
+        case READ_SW2:
+            BD[EP0IN].address[0] = (uint8_t)sw_read(&sw2);
+            BD[EP0IN].bytecount = 1;         // set EP0 IN byte count to 1
+            BD[EP0IN].status = 0xC8;         // send packet as DATA1, set UOWN bit
+            break;
+        case READ_SW3:
+            BD[EP0IN].address[0] = (uint8_t)sw_read(&sw3);
+            BD[EP0IN].bytecount = 1;         // set EP0 IN byte count to 1
+            BD[EP0IN].status = 0xC8;         // send packet as DATA1, set UOWN bit
             break;
         case ENC_READ_REG:
             result = enc_readReg(USB_setup.wValue);
@@ -229,7 +230,14 @@ void VendorRequests(void) {
             printf("Set spring constant to %4f\r\n", SPRING_CONSTANT);
             BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
             BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
-            break;    
+            break;
+        case READ_POSITION:
+            temp.w = round(degs) + 50;
+            BD[EP0IN].address[0] = temp.b[0];
+            BD[EP0IN].address[1] = temp.b[1];
+            BD[EP0IN].bytecount = 2;    // set EP0 IN byte count to 2
+            BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
+
         default:
             USB_error_flags |= 0x01;  // set Request Error Flag
     }
@@ -299,19 +307,11 @@ void setup(void) {
 
 int main(void) {
     setup();
-    // unsigned char angle_array[14];  // LSB will be angle_array[0]
-
-    // float pwm_duty_array[4] = {0.40, 0.41, 0.42, 0.43};
-    // float pwm_duty_array[4] = {0.12, 0.12, 0, 0};
-
-    // pwm_set_direction(!pwm_direction);
-    // pwm_set_duty(0);
     pwm_set_duty(0);
     pwm_set_direction(0);
     
     printf("%s\r\n", "STARTING LOOP");
     float encoder_master_count = 0;
-    float degs = 0;
     uint16_t current_ticks = 0;
     uint16_t previous_ticks = spi_read_ticks();
     float target_degs = 10;
@@ -325,36 +325,18 @@ int main(void) {
             // Blink green light to show normal operation.
             timer_lower(&timer2);
             led_toggle(&led2);
-            printf("DUTY: %3f, dir: %d\r\n", pwm_duty, pwm_direction);
-
-            // printf("%s\r\n", "BLINK LIGHT");
-            // printf("MASTER COUNT: %f\r\n", encoder_master_count);
-            // printf("MASTER DEGS: %f\r\n", degs);
-            // printf("MOTOR VOLTS: %d\r\n", pin_read(MOTOR_VOLTAGE) >> 6);
-            // printf("PID INFO: SP: %2f, POS: %2f, CMD: %2f", cur_control.set_point, cur_control.position, pid_command);
-            printf("I: %2f, T: %2f\r\n", motor.current, cur_control.position);
-            // printf("Current: %f \r\n", motor.current);
         }
 
         if (timer_flag(&timer3)) {
             timer_lower(&timer3);
             led_toggle(&led3);
-            // __builtin__disi(0x3FFF);
             theor_torque = spring_model(degs);  // Outputs theoretical torque predicted by spring model
             cur_control.set_point = fabsf(theor_torque);
             cur_control.neg_set_point = read_sign(theor_torque);
             read_motor_current(&motor);
             cur_control.position = convert_motor_torque(motor.current);
-            // printf("CURTICKS: %d\r\n", current_ticks);
-            // printf("MASTCOUNT: %d\r\n", encoder_master_count);
-            // printf("DEGS: %f\r\n", degs);
-            // printf("Th: %f, Ac: %f, I: %f\r\n", cur_control.set_point, cur_control.position, motor_current);
-
             pid_command = PID_control(&cur_control);
-            
             pwm_duty = pid_to_pwm(pid_command, cur_control.neg_set_point);
-            // printf("degs: %3f, theo_torque: %3f, read_torque: %3f, pid_cmd: %3f.\r\n", degs, cur_control.set_point, cur_control.position, pid_command);
-            // __builtin__disi(0x0000);
         }
 
         if (!sw_read(&sw2)) {
