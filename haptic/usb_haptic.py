@@ -9,13 +9,18 @@ class USBCommunications(object):
     def __init__(self):
         self.TOGGLE_LED1 = 1
         self.TOGGLE_LED2 = 2
-        self.READ_SW1 = 3
-        self.ENC_READ_REG = 5
+        self.TOGGLE_LED3 = 3
+        self.READ_SW1 = 4
+        self.READ_SW2 = 5
+        self.READ_SW3 = 6
+        self.ENC_READ_REG = 7
         self.TOGGLE_LED3 = 8
-        self.READ_SW2 = 9
-        self.READ_SW3 = 10
-        self.SET_PID = 11
-        self.SEND_NUM = 12
+        self.SET_PID_P = 9
+        self.SET_PID_I = 10
+        self.SET_PID_D = 11
+        self.SET_SPRING_CONSTANT = 12
+
+        self.divisor0 = 100
         self.dev = usb.core.find(idVendor=0x6666, idProduct=0x0003)
         if self.dev is None:
             raise ValueError(
@@ -77,13 +82,29 @@ class USBCommunications(object):
         else:
             return int(ret[0])
 
-    def set_pid(self, Kp, Ki, Kd):
+    def set_pid_p(self, K):
         try:
-            ret = self.dev.ctrl_transfer(0xC0, self.SET_PID, 0, 0, 1)
+            ret = self.dev.ctrl_transfer(0x40, self.SET_PID_P, int(K * self.divisor0), self.divisor0)
         except usb.core.USBError:
-            print "Could not send READ_SW3 vendor request."
-        else:
-            return int(ret[0])
+            print "Could not send SET_PID_P vendor request."
+
+    def set_pid_i(self, K):
+        try:
+            ret = self.dev.ctrl_transfer(0x40, self.SET_PID_I, int(K * self.divisor0), self.divisor0)
+        except usb.core.USBError:
+            print "Could not send SET_PID_I vendor request."
+
+    def set_pid_d(self, K):
+        try:
+            ret = self.dev.ctrl_transfer(0x40, self.SET_PID_D, int(K * self.divisor0), self.divisor0)
+        except usb.core.USBError:
+            print "Could not send SET_PID_D vendor request."
+
+    def set_spring_constant(self, K):
+        try:
+            ret = self.dev.ctrl_transfer(0x40, self.SET_SPRING_CONSTANT, int(K * self.divisor0), self.divisor0)
+        except usb.core.USBError:
+            print "Could not send SET_SPRING_CONSTANT vendor request."
 
     def enc_readReg(self, address):
         try:
@@ -94,13 +115,13 @@ class USBCommunications(object):
         else:
             return ret
 
-    def send_num(self, num):
-        msg = 'test'
-        msg = struct.pack('i', num)
-        try:
-            ret = self.dev.ctrl_transfer(
-                0x40, self.SEND_NUM, 23, 223424,33)
-        except usb.core.USBError:
-            print "Could not send ENC_READ_REG vendor request."
-        else:
-            return ret
+    # def send_num(self, num):
+    #     msg = 'test'
+    #     msg = struct.pack('i', num)
+    #     try:
+    #         ret = self.dev.ctrl_transfer(
+    #             0x40, self.SEND_NUM, 23, 223424,33)
+    #     except usb.core.USBError:
+    #         print "Could not send ENC_READ_REG vendor request."
+    #     else:
+    #         return ret

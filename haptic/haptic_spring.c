@@ -190,6 +190,7 @@ float count_to_deg(float new_count) {
 void VendorRequests(void) {
     WORD32 address;
     WORD result;
+    uint16_t temp0, temp1;
 
     switch (USB_setup.bRequest) {
         WORD temp;
@@ -205,44 +206,30 @@ void VendorRequests(void) {
             BD[EP0IN].bytecount = 2;  // set EP0 IN byte count to 1
             BD[EP0IN].status = 0xC8;  // send packet as DATA1, set UOWN bit
             break;
-        case SET_KP:
-            // val1 = USB_setup.wValue.w;
-            // val2 = USB_setup.wIndex.w;
+        case SET_PID_P:
+            cur_control.Kp = (float)(USB_setup.wValue.w)/(float)(USB_setup.wIndex.w);
+            printf("Set Kp to %4f\r\n", cur_control.Kp);
             BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
             BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
             break;
-        case SET_KI:
-            // val1 = USB_setup.wValue.w;
-            // val2 = USB_setup.wIndex.w;
+        case SET_PID_I:
+            cur_control.Ki = (float)(USB_setup.wValue.w)/(float)(USB_setup.wIndex.w);
+            printf("Set Ki to %4f\r\n", cur_control.Kp);
             BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
             BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
             break;
-        case SET_KD:
-            // val1 = USB_setup.wValue.w;
-            // val2 = USB_setup.wIndex.w;
+        case SET_PID_D:
+            cur_control.Kd = (float)(USB_setup.wValue.w)/(float)(USB_setup.wIndex.w);
+            printf("Set Kd to %4f\r\n", cur_control.Kp);
             BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
             BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
             break;
-        case SET_DUTY:
-            pwm_set_raw_duty(USB_setup.wValue.w);
-            // val2 = USB_setup.wIndex.w;
+        case SET_SPRING_CONSTANT:
+            SPRING_CONSTANT = (float)(USB_setup.wValue.w)/(float)(USB_setup.wIndex.w);
+            printf("Set spring constant to %4f\r\n", SPRING_CONSTANT);
             BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
             BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
-            break;
-        case GET_MOTOR_CURRENT:
-            temp.w = motor.current;
-            BD[EP0IN].address[0] = temp.b[0];
-            BD[EP0IN].address[1] = temp.b[1];
-            BD[EP0IN].bytecount = 2;    // set EP0 IN byte count to 4
-            BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
-            break;
-        case GET_SETPOINT:
-            temp.w = cur_control.set_point;
-            BD[EP0IN].address[0] = temp.b[0];
-            BD[EP0IN].address[1] = temp.b[1];
-            BD[EP0IN].bytecount = 2;    // set EP0 IN byte count to 4
-            BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
-            break;         
+            break;    
         default:
             USB_error_flags |= 0x01;  // set Request Error Flag
     }
