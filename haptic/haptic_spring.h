@@ -51,6 +51,7 @@ typedef struct {
     float Ki;
     float Kd;
     float set_point;
+    bool neg_set_point;
     float dt;
     float position;
     float prev_position;
@@ -69,18 +70,18 @@ MOTOR motor;
 
 uint8_t interrupted = 0;
 // Spring model
-float SPRING_CONSTANT = 0.3;
+float SPRING_CONSTANT = .08;
 
 // Motor Configuration
 // http://www.jameco.com/Jameco/Products/ProdDS/238473.PDF
 float MOTOR_TORQUE_COEF = 1.06;
 // float PWM_MIN = 0.25;
-float MAX_DUTY = 0.99;
+float MAX_DUTY = 0.60;
 
 _PIN* DEBUGD0 = &D[12]; 
 _PIN* DEBUGD1 = &D[13]; 
 #define LOOP_TIME 0.005
 
-#define KP .3
+#define KP .5
 #define KI 0
-#define KD 0
+#define KD .01

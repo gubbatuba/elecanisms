@@ -1,5 +1,6 @@
 #include <p24FJ128GB206.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
 #include "config.h"
@@ -137,11 +138,12 @@ float PID_control(PID *self) {
     float iterm = self->Ki * self->integ_state;
     float dterm = self->Kd * deriv;
     self->prev_position = self->position;
+    // printf("PID. SP: %2f, POS: %2f, CMD: %2f\r\n", self->set_point, self->position, pterm + iterm + dterm);
     pin_clear(DEBUGD0);
     return pterm + iterm + dterm;
 }
 
-float pid_to_pwm(float pid_command, float set_point) {
+float pid_to_pwm(float pid_command, bool set_point_sign) {
     // if (set_point > 0) {        // If we want "positive" torque
     //     pwm_set_direction(1);
     // } else {
@@ -150,14 +152,16 @@ float pid_to_pwm(float pid_command, float set_point) {
     float new_pwm = pwm_duty + pid_command;
     if (new_pwm > MAX_DUTY) {
         new_pwm = MAX_DUTY;
+    } else if (new_pwm < 0) {
+        new_pwm = 0;
     }
-    if (new_pwm > 0) {        // If we want "positive" torque
-        pwm_set_direction(1);
-    } else {
+    if (set_point_sign) {        // If we want "positive" torque
         pwm_set_direction(0);
+    } else {
+        pwm_set_direction(1);
     }
-    pwm_set_duty(fabsf(new_pwm));
-    printf("DUTY: %3f\r\n", new_pwm);
+    pwm_set_duty(new_pwm);
+    
     return new_pwm;
 }
 
@@ -167,13 +171,13 @@ float spring_model(float theta) {
     return -SPRING_CONSTANT * theta;
 }
 
+bool read_sign(float theor_torque) {
+    if (theor_torque > 0) return 1;
+    else return 0;
+}
 float convert_motor_torque(float current) {
     // Converts motor current to effective torque
-    if (pwm_direction == 0) {
-        return -(current * MOTOR_TORQUE_COEF);
-    } else {
-        return current * MOTOR_TORQUE_COEF;
-    } 
+    return fabsf(current * MOTOR_TORQUE_COEF);
 }
 
 //Change master count to degs
@@ -181,26 +185,6 @@ float count_to_deg(float new_count) {
     float degs = new_count/714.15;
     // printf("%f\r\n", degs);
     return degs; 
-}
-
-void motor_control(float degs, float target_degs) {
-    float diff = degs - target_degs;
-    float new_duty;
-    float threshold = 1;
-    unsigned char direction;
-
-    if (diff > threshold) {
-        direction = 1;
-        new_duty = 0.85;
-    } else if (diff < -threshold) {
-        direction = 0;
-        new_duty = 0.85;
-    } else {
-        direction = pwm_direction;
-        new_duty = 0.0;
-    }
-    pwm_set_direction(direction);
-    pwm_set_duty(new_duty);
 }
 
 void VendorRequests(void) {
@@ -346,6 +330,7 @@ int main(void) {
     float target_degs = 10;
     float motor_current = 0;  // current through motor in amperes
     float pid_command = 0;
+    float theor_torque;
     bitset(&IEC0, 2);
     
     while (1) {
@@ -353,11 +338,14 @@ int main(void) {
             // Blink green light to show normal operation.
             timer_lower(&timer2);
             led_toggle(&led2);
+            printf("DUTY: %3f, dir: %d\r\n", pwm_duty, pwm_direction);
+
             // printf("%s\r\n", "BLINK LIGHT");
             // printf("MASTER COUNT: %f\r\n", encoder_master_count);
             // printf("MASTER DEGS: %f\r\n", degs);
             // printf("MOTOR VOLTS: %d\r\n", pin_read(MOTOR_VOLTAGE) >> 6);
-            // printf("PID INFO: SP: %f, POS: %f, CMD: %f, duty: %f, dir %f, current %f, degs %f.\r\n", cur_control.set_point, cur_control.position, pid_command, pwm_duty, pwm_direction, motor_current, degs);
+            // printf("PID INFO: SP: %2f, POS: %2f, CMD: %2f", cur_control.set_point, cur_control.position, pid_command);
+            printf("I: %2f, T: %2f\r\n", motor.current, cur_control.position);
             // printf("Current: %f \r\n", motor.current);
         }
 
@@ -365,7 +353,9 @@ int main(void) {
             timer_lower(&timer3);
             led_toggle(&led3);
             // __builtin__disi(0x3FFF);
-            cur_control.set_point = spring_model(degs);  // Outputs theoretical torque predicted by spring model
+            theor_torque = spring_model(degs);  // Outputs theoretical torque predicted by spring model
+            cur_control.set_point = fabsf(theor_torque);
+            cur_control.neg_set_point = read_sign(theor_torque);
             read_motor_current(&motor);
             cur_control.position = convert_motor_torque(motor.current);
             // printf("CURTICKS: %d\r\n", current_ticks);
@@ -375,8 +365,8 @@ int main(void) {
 
             pid_command = PID_control(&cur_control);
             
-            pwm_duty = pid_to_pwm(pid_command, cur_control.set_point);
-            printf("degs: %3f, theo_torque: %3f, read_torque: %3f, pid_cmd: %3f.\r\n", degs, cur_control.set_point, cur_control.position, pid_command);
+            pwm_duty = pid_to_pwm(pid_command, cur_control.neg_set_point);
+            // printf("degs: %3f, theo_torque: %3f, read_torque: %3f, pid_cmd: %3f.\r\n", degs, cur_control.set_point, cur_control.position, pid_command);
             // __builtin__disi(0x0000);
         }
 
