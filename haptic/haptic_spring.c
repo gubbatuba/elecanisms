@@ -1,6 +1,7 @@
 #include <p24FJ128GB206.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <math.h>
 #include "config.h"
 #include "common.h"
 #include "ui.h"
@@ -123,6 +124,7 @@ void read_motor_current(MOTOR *mot) {
 }
 
 float PID_control(PID *self) {
+    pin_set(DEBUGD0);
     float error = self->set_point - self->position;
     float deriv = (self->position - self->prev_position)/self->dt;
     self->integ_state += error;
@@ -135,17 +137,28 @@ float PID_control(PID *self) {
     float iterm = self->Ki * self->integ_state;
     float dterm = self->Kd * deriv;
     self->prev_position = self->position;
-
+    pin_clear(DEBUGD0);
     return pterm + iterm + dterm;
 }
 
-void pid_to_pwm(float pid_command, float set_point) {
-    if (set_point > 0) {
+float pid_to_pwm(float pid_command, float set_point) {
+    // if (set_point > 0) {        // If we want "positive" torque
+    //     pwm_set_direction(1);
+    // } else {
+    //     pwm_set_direction(0);
+    // }
+    float new_pwm = pwm_duty + pid_command;
+    if (new_pwm > MAX_DUTY) {
+        new_pwm = MAX_DUTY;
+    }
+    if (new_pwm > 0) {        // If we want "positive" torque
         pwm_set_direction(1);
     } else {
         pwm_set_direction(0);
     }
-    pwm_set_duty(pwm_duty + pid_command);
+    pwm_set_duty(fabsf(new_pwm));
+    printf("DUTY: %3f\r\n", new_pwm);
+    return new_pwm;
 }
 
 float spring_model(float theta) {
@@ -166,6 +179,7 @@ float convert_motor_torque(float current) {
 //Change master count to degs
 float count_to_deg(float new_count) {
     float degs = new_count/714.15;
+    // printf("%f\r\n", degs);
     return degs; 
 }
 
@@ -302,6 +316,8 @@ void setup(void) {
     oc_pwm(&oc1, PWM_I1, NULL, pwm_freq, pwm_duty);
     oc_pwm(&oc2, PWM_I2, NULL, pwm_freq, pwm_duty);
     pin_analogIn(MOTOR_VOLTAGE);
+    pin_digitalOut(DEBUGD0);
+    pin_digitalOut(DEBUGD1);
 
     InitUSB();                              // initialize the USB registers and
                                             // serial interface engine
@@ -319,8 +335,8 @@ int main(void) {
 
     // pwm_set_direction(!pwm_direction);
     // pwm_set_duty(0);
-    // pwm_set_duty(.60);
-    // pwm_set_direction(0);
+    pwm_set_duty(0);
+    pwm_set_direction(0);
     
     printf("%s\r\n", "STARTING LOOP");
     float encoder_master_count = 0;
@@ -340,13 +356,14 @@ int main(void) {
             // printf("%s\r\n", "BLINK LIGHT");
             // printf("MASTER COUNT: %f\r\n", encoder_master_count);
             // printf("MASTER DEGS: %f\r\n", degs);
-            // printf("MOTOR VOLTS: %d\r\n", pin_read(MOTOR_VOLTAGE));
+            // printf("MOTOR VOLTS: %d\r\n", pin_read(MOTOR_VOLTAGE) >> 6);
             // printf("PID INFO: SP: %f, POS: %f, CMD: %f, duty: %f, dir %f, current %f, degs %f.\r\n", cur_control.set_point, cur_control.position, pid_command, pwm_duty, pwm_direction, motor_current, degs);
             // printf("Current: %f \r\n", motor.current);
         }
 
         if (timer_flag(&timer3)) {
             timer_lower(&timer3);
+            led_toggle(&led3);
             // __builtin__disi(0x3FFF);
             cur_control.set_point = spring_model(degs);  // Outputs theoretical torque predicted by spring model
             read_motor_current(&motor);
@@ -356,8 +373,10 @@ int main(void) {
             // printf("DEGS: %f\r\n", degs);
             // printf("Th: %f, Ac: %f, I: %f\r\n", cur_control.set_point, cur_control.position, motor_current);
 
-            // pid_command = PID_control(&cur_control);
-            // pid_to_pwm(pid_command, cur_control.set_point);
+            pid_command = PID_control(&cur_control);
+            
+            pwm_duty = pid_to_pwm(pid_command, cur_control.set_point);
+            printf("degs: %3f, theo_torque: %3f, read_torque: %3f, pid_cmd: %3f.\r\n", degs, cur_control.set_point, cur_control.position, pid_command);
             // __builtin__disi(0x0000);
         }
 
@@ -371,6 +390,7 @@ int main(void) {
         encoder_master_count = encoder_counter(current_ticks, previous_ticks, encoder_master_count);
         degs = count_to_deg(encoder_master_count);
         previous_ticks = current_ticks;
+        pin_toggle(DEBUGD1);  // Heartbeat signal
         
     }
 }

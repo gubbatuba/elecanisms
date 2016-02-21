@@ -24,7 +24,7 @@ _PIN* SPI_CS = &D[3];       // Chip select pin
 #define REG_MAG_ADDR        0x3FFE
 
 // PWM Configuration
-float pwm_freq = 3000;       // ~245Hz is minimum, 35000 was original
+float pwm_freq = 300;       // ~245Hz is minimum, 35000 was original
 float pwm_duty = 0;      // Safely start with no commanded motor motion
 unsigned char pwm_direction = 1;  // Initialize motor for forward motion
 _PIN* PWM_I1 = &D[8];       // Input 1 to motor driver chip
@@ -69,16 +69,18 @@ MOTOR motor;
 
 uint8_t interrupted = 0;
 // Spring model
-float SPRING_CONSTANT = 1;
+float SPRING_CONSTANT = 0.3;
 
 // Motor Configuration
 // http://www.jameco.com/Jameco/Products/ProdDS/238473.PDF
 float MOTOR_TORQUE_COEF = 1.06;
 // float PWM_MIN = 0.25;
-// float PWM_MAX = 0.99;
+float MAX_DUTY = 0.99;
 
+_PIN* DEBUGD0 = &D[12]; 
+_PIN* DEBUGD1 = &D[13]; 
 #define LOOP_TIME 0.005
 
-#define KP .1
+#define KP .3
 #define KI 0
 #define KD 0
