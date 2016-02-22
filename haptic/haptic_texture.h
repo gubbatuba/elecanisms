@@ -42,6 +42,11 @@ _PIN* SPI_CS = &D[3];       // Chip select pin
 #define REG_MAG_ADDR        0x3FFE
 
 // PWM Configuration
+double TEXTURE_LT_ST = 30;
+double TEXTURE_HV_ST = -10;
+double TEXTURE_LT_SL = 10;
+double TEXTURE_HV_SL = -30;
+double TEXTURE_SB = 0;
 float pwm_freq = 3000;       // ~245Hz is minimum, 35000 was original
 uint16_t pwm_duty = 0;      // Safely start with no commanded motor motion
 unsigned char pwm_direction = 1;  // Initialize motor for forward motion

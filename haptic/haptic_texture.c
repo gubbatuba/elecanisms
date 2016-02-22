@@ -62,11 +62,6 @@ double encoder_counter(uint16_t current_ticks, uint16_t previous_ticks, double p
 }
 
 void texture(double degs){
-    double light_stick_deg = 30;
-    double heavy_slip_deg = -10;
-    double light_slip_deg = 10;
-    double heavy_stick_deg = -30;
-    double speed_bump = 0;
     double dist = 4;
     double bump_dist = 2;
     float new_duty;
