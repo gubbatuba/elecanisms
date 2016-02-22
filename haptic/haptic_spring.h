@@ -19,11 +19,12 @@ _PIN* SPI_CS = &D[3];       // Chip select pin
 #define READ_SW2        5
 #define READ_SW3        6
 #define ENC_READ_REG    7
-#define TOGGLE_LED3     8
-#define SET_PID_P       9
-#define SET_PID_I       10
-#define SET_PID_D       11
-#define SET_SPRING_CONSTANT     12
+#define SET_PID_P       8
+#define SET_PID_I       9
+#define SET_PID_D       10
+#define SET_SPRING_CONSTANT     11
+#define READ_POSITION           12
+#define READ_CURRENT            13
 
 #define REG_MAG_ADDR        0x3FFE
 

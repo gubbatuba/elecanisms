@@ -14,12 +14,12 @@ class USBCommunications(object):
         self.READ_SW2 = 5
         self.READ_SW3 = 6
         self.ENC_READ_REG = 7
-        self.TOGGLE_LED3 = 8
-        self.SET_PID_P = 9
-        self.SET_PID_I = 10
-        self.SET_PID_D = 11
-        self.SET_SPRING_CONSTANT = 12
-        self.READ_POSITION = 13
+        self.SET_PID_P = 8
+        self.SET_PID_I = 9
+        self.SET_PID_D = 10
+        self.SET_SPRING_CONSTANT = 11
+        self.READ_POSITION = 12
+        self.READ_CURRENT = 13
 
         self.divisor0 = 100
         self.dev = usb.core.find(idVendor=0x6666, idProduct=0x0003)
@@ -123,11 +123,12 @@ class USBCommunications(object):
     def read_position(self):
         try:
             ret = self.dev.ctrl_transfer(0xC0, self.READ_POSITION, 0, 0, 2)
-        except usb.core.USBError:
-            print "Could not send GET_VALS vendor request."
+        except usb.core.USBError, e:
+            print e
+            print "Could not send READ_POSITION vendor request."
         else:
             ret_value = int(ret[0]) + int(ret[1]) * 256
-            return ret_value - 50
+            return (ret_value/100.)- 50
 
     # def send_num(self, num):
     #     msg = 'test'

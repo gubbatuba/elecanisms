@@ -167,6 +167,7 @@ void VendorRequests(void) {
     WORD result;
     WORD temp;
     uint16_t temp0, temp1;
+    float move_degs;
 
     switch (USB_setup.bRequest) {
         WORD temp;
@@ -232,12 +233,13 @@ void VendorRequests(void) {
             BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
             break;
         case READ_POSITION:
-            temp.w = round(degs) + 50;
+            move_degs=(degs + 50) * 100;
+            temp.w = round(move_degs);
             BD[EP0IN].address[0] = temp.b[0];
             BD[EP0IN].address[1] = temp.b[1];
             BD[EP0IN].bytecount = 2;    // set EP0 IN byte count to 2
             BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
-
+            break;
         default:
             USB_error_flags |= 0x01;  // set Request Error Flag
     }
