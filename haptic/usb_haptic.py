@@ -28,6 +28,7 @@ class USBCommunications(object):
         self.SET_TEXTURE_LT_SL = 19
         self.SET_TEXTURE_HV_SL = 20
         self.SET_TEXTURE_SB = 21
+        self.READ_DAMPER_VEL = 26
 
         self.divisor0 = 100
         self.dev = usb.core.find(idVendor=0x6666, idProduct=0x0003)
@@ -197,6 +198,20 @@ class USBCommunications(object):
                 0x40, self.SET_TEXTURE_SB, int((speed_bump + 50) * self.divisor0), self.divisor0)
         except usb.core.USBError:
             print "Could not send SET_TEXTURE_ANGLE_SP vendor request."
+
+
+    def read_damper_vel(self):
+        try:
+            ret = self.dev.ctrl_transfer(0xC0, self.READ_DAMPER_VEL, 0, 0, 4)
+        except usb.core.USBError, e:
+            print e
+            print "Could not send READ_POSITION vendor request."
+        else:
+            raw_vel = int(ret[0])+int(ret[1])*256
+            raw_dc = int(ret[2])+int(ret[3])*256
+            vel = raw_vel/100. - 50
+            dc = (raw_dc/1000.) - 5
+            return [vel, dc]
 
     # def send_num(self, num):
     #     msg = 'test'

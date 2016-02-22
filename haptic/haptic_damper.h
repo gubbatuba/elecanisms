@@ -27,6 +27,7 @@ _PIN* SPI_CS = &D[3];       // Chip select pin
 #define READ_CURRENT            13
 #define READ_VELOCITY           14
 #define SET_DAMPER_COEF         15
+#define READ_DAMPER_VEL         26
 
 #define REG_MAG_ADDR        0x3FFE
 
@@ -48,3 +49,5 @@ static const char clear[5]  = {27, '[', '2', 'J', 0};  // Term. CLEAR sequence
 float VEL_SCALER = 2.65;
 
 #define round(x) ((x)>=0?(uint16_t)((x)+0.5):(uint16_t)((x)-0.5))
+float current_duty_cycle = 0;
+float delta_degs = 0;

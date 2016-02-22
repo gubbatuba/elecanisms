@@ -115,7 +115,7 @@ void pwm_set_direction(unsigned char direction) {
     }
 }
 
-void damper(float ddegs) {
+float damper(float ddegs) {
     // Determine current direction of motor manipulation.
     if (ddegs > 0) {
         drive_direction = 0;
@@ -130,6 +130,7 @@ void damper(float ddegs) {
     }
     pwm_set_duty(new_duty);
     pwm_set_direction((drive_direction + 1) % 2);
+    return new_duty;
 }
 
 // float PID_control(PID *self) {
@@ -168,7 +169,7 @@ void VendorRequests(void) {
     WORD32 address;
     WORD result;
     WORD temp;
-    uint16_t temp0, temp1;
+    WORD temp0, temp1;
     float move_degs;
 
     switch (USB_setup.bRequest) {
@@ -216,6 +217,17 @@ void VendorRequests(void) {
             BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
             BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
             break;
+        case READ_DAMPER_VEL:
+            temp0.w = round((delta_degs + 50) * 100 );
+            BD[EP0IN].address[0] = temp0.b[0];
+            BD[EP0IN].address[1] = temp0.b[1];
+            temp1.w = round((current_duty_cycle* (pwm_direction == 1) ? 1:-1) + 5 * 1000);
+            BD[EP0IN].address[2] = temp0.b[0];
+            BD[EP0IN].address[3] = temp0.b[1];
+            BD[EP0IN].bytecount = 4;    // set EP0 IN byte count to 2
+            BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
+            break;
+
         // case READ_VELOCITY:
         //     move_degs=(delta_degs + 50) * 100;
         //     temp.w = round(move_degs);
@@ -292,7 +304,6 @@ int main(void) {
     float encoder_master_count = 0;
     float previous_degs = 0;
     float current_degs = 0;
-    float delta_degs = 0;
     uint16_t current_ticks = 0;
     uint16_t previous_ticks = spi_read_ticks();
    
@@ -307,7 +318,7 @@ int main(void) {
         if (timer_flag(&timer3)) {
             timer_lower(&timer3);
             delta_degs = current_degs - previous_degs;
-            damper(delta_degs);
+            current_duty_cycle = damper(delta_degs);
             previous_degs = current_degs;
         }
 
