@@ -326,12 +326,9 @@ int main(void) {
         current_ticks = spi_read_ticks();
         encoder_master_count = encoder_counter(current_ticks, previous_ticks, encoder_master_count);
         degs = count_to_deg(encoder_master_count);
-        texture(degs);
+        texture(degs, TEXTURE_LT_ST, TEXTURE_HV_ST, TEXTURE_LT_SL, TEXTURE_HV_SL, TEXTURE_SB);
         previous_ticks = current_ticks;
-
         ServiceUSB();
-        set_texture = texture(degs);
-        pin_toggle(DEBUGD1);  // Heartbeat signal
     }
 }
 
