@@ -227,8 +227,6 @@ void VendorRequests(void) {
             BD[EP0IN].address[1] = temp0.b[1];
             float step1 = (current_pwm * (float)((pwm_direction == 1) ? 1:-1));
             temp1.w = round( (step1 + 5) * 1000);
-            printf("CURRPWM: %2f, %2f\r\n", current_pwm, step1 );
-            printf("%d\r\n", temp1.w);
             BD[EP0IN].address[2] = temp1.b[0];
             BD[EP0IN].address[3] = temp1.b[1];
             BD[EP0IN].bytecount = 4;    // set EP0 IN byte count to 2

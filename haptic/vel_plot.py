@@ -12,9 +12,9 @@ def read_vel():
 
 USB_COMMS = USBCommunications()
 
-test_time = 10
+test_time = 20
 sample_period = .01
-csvname = 'data/haptic_damper1.csv'
+csvname = 'data/haptic_damper3.csv'
 time_start = time.clock()
 elapsed_time = 0
 data = []

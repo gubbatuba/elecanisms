@@ -210,7 +210,8 @@ void VendorRequests(void) {
             temp0.w = round((degs + 50) * 100);
             BD[EP0IN].address[0] = temp0.b[0];
             BD[EP0IN].address[1] = temp0.b[1];
-            temp1.w = round((current_pwm * (pwm_direction == 1) ? 1:-1) + 5 * 1000);
+            float step1 = (current_pwm * (float)((pwm_direction == 1) ? 1:-1));
+            temp1.w = round( (step1 + 5) * 1000);
             BD[EP0IN].address[2] = temp1.b[0];
             BD[EP0IN].address[3] = temp1.b[1];
             BD[EP0IN].bytecount = 4;    // set EP0 IN byte count to 2

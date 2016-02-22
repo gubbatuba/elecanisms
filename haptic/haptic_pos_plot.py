@@ -14,7 +14,7 @@ USB_COMMS = USBCommunications()
 
 test_time = 20
 sample_period = .01
-csvname = 'data/haptic_texture5.csv'
+csvname = 'data/haptic_wall0.csv'
 time_start = time.clock()
 elapsed_time = 0
 data = []
