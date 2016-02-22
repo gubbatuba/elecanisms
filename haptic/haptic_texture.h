@@ -42,10 +42,14 @@ _PIN* SPI_CS = &D[3];       // Chip select pin
 #define SET_TEXTURE_LT_SL		19
 #define SET_TEXTURE_HV_SL		20
 #define SET_TEXTURE_SB			21
+#define READ_TEXTURE_PWM		22
+#define READ_TEXTURE_DIRECTION	23
+#define READ_TEXTURE_ANGLE		24
 
 #define REG_MAG_ADDR        0x3FFE
 
 // PWM Configuration
+
 double light_stick_deg = 30;
 double heavy_stick_deg = -10;
 double light_slip_deg = 10;

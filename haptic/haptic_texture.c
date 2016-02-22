@@ -92,6 +92,7 @@ void texture(double degs){
     }
     pwm_set_direction(direction);
     pwm_set_duty(new_duty);
+    return new_duty
 }
 
 //Change master count to degs
@@ -191,6 +192,30 @@ void VendorRequests(void) {
             speed_bump = ((double)(USB_setup.wValue.w)/(double)(USB_setup.wIndex.w)) - 50;
             printf("Set wall angle to %4f\r\n", speed_bump);
             BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
+            BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
+            break;
+        case READ_TEXTURE_PWM:
+            READ_TEXTURE_PWM=(degs + 50) * 100;
+            temp.w = round(move_degs);
+            BD[EP0IN].address[0] = temp.b[0];
+            BD[EP0IN].address[1] = temp.b[1];
+            BD[EP0IN].bytecount = 2;    // set EP0 IN byte count to 2
+            BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
+            break;
+        case READ_TEXTURE_DIRECTION:
+            move_degs=(degs + 50) * 100;
+            temp.w = round(move_degs);
+            BD[EP0IN].address[0] = temp.b[0];
+            BD[EP0IN].address[1] = temp.b[1];
+            BD[EP0IN].bytecount = 2;    // set EP0 IN byte count to 2
+            BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
+            break;
+        case READ_TEXTURE_ANGLE:
+            move_degs=(degs + 50) * 100;
+            temp.w = round(move_degs);
+            BD[EP0IN].address[0] = temp.b[0];
+            BD[EP0IN].address[1] = temp.b[1];
+            BD[EP0IN].bytecount = 2;    // set EP0 IN byte count to 2
             BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
             break;
         default:
@@ -321,7 +346,7 @@ int main(void) {
         current_ticks = spi_read_ticks();
         encoder_master_count = encoder_counter(current_ticks, previous_ticks, encoder_master_count);
         degs = count_to_deg(encoder_master_count);
-        texture(degs);
+        current_pwm = texture(degs);
         previous_ticks = current_ticks;
         ServiceUSB();
     }
