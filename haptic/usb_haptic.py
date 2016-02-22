@@ -22,6 +22,7 @@ class USBCommunications(object):
         self.READ_CURRENT = 13
         self.READ_VELOCITY = 14
         self.SET_DAMPER_COEF = 15
+        self.READ_WALL_ANGLE = 16
 
 
         self.divisor0 = 100
@@ -149,6 +150,14 @@ class USBCommunications(object):
                 0x40, self.SET_DAMPER_COEF, int(K * self.divisor0), self.divisor0)
         except usb.core.USBError:
             print "Could not send SET_SPRING_CONSTANT vendor request."
+
+    def set_wall_angle(self, wall_angle):
+        try:
+            ret = self.dev.ctrl_transfer(
+                0x40, self.SET_DAMPER_COEF, int(wall_angle * self.divisor0), self.divisor0)
+        except usb.core.USBError:
+            print "Could not send SET_WALL_ANGLE vendor request."
+
     # def send_num(self, num):
     #     msg = 'test'
     #     msg = struct.pack('i', num)
