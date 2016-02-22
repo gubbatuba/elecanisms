@@ -21,19 +21,19 @@ class simpleapp_tk(Tkinter.Tk):
         self.connection_label = Tkinter.Label(textvariable=self.connect_status, justify='center')
         self.connection_label.grid(column=2, row=0, columnspan=2)
         self.spring_constant_scale = Tkinter.Scale(
-            self, from_=0, to=0.5, resolution=.01)
+            self, from_=0, to=0.5, resolution=.001)
         self.spring_constant_scale.grid(column=0, row=2)
 
         self.Kp_constant_scale = Tkinter.Scale(
-            self, from_=0, to=0.5, resolution=.01)
+            self, from_=0, to=0.3, resolution=.001)
         self.Kp_constant_scale.grid(column=1, row=2)
 
         self.Ki_constant_scale = Tkinter.Scale(
-            self, from_=0, to=0.5, resolution=.01)
+            self, from_=0, to=0.1, resolution=.001)
         self.Ki_constant_scale.grid(column=2, row=2)
 
         self.Kd_constant_scale = Tkinter.Scale(
-            self, from_=0, to=0.5, resolution=.01)
+            self, from_=0, to=0.1, resolution=.001)
         self.Kd_constant_scale.grid(column=3, row=2)
 
         button_k = Tkinter.Button(self, text=u"Set k",

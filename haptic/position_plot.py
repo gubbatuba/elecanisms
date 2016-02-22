@@ -13,8 +13,8 @@ def read_pos():
 USB_COMMS = USBCommunications()
 
 test_time = 10
-sample_period = .01
-csvname = 'data/haptic_spring2.csv'
+sample_period = .1
+csvname = 'data/haptic_spring4.csv'
 time_start = time.clock()
 elapsed_time = 0
 data = []
