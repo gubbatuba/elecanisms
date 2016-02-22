@@ -76,17 +76,25 @@ class simpleapp_tk(Tkinter.Tk):
                 print("No connection found...")
                 self.usbc = None
 
-    def set_wall_ang(self):
-        new_constant = self.Damper_Coef_Scale.get()
-        self.usbc.set_damper_coef(new_constant)
+    def set_ls_ang(self):
+        new_constant = self.light_stick_scale.get()
+        self.usbc.set_texture_lt_st(new_constant)
 
-    # def set_ls_ang(self):
-    #     new_constant = self.Damper_Coef_Scale.get()
-    #     self.usbc.set_damper_coef(new_constant)
-    # def set_hs_ang(self):
-    # def set_lp_ang(self):
-    # def set_ls_ang(self):
-    # def set_sb_ang(self):
+    def set_hs_ang(self):
+        new_constant = self.heavy_stick_scale.get()
+        self.usbc.set_texture_hv_st(new_constant)
+
+    def set_lp_ang(self):
+        new_constant = self.light_slip_scale.get()
+        self.usbc.set_texture_lt_sl(new_constant)
+
+    def set_ls_ang(self):
+        new_constant = self.heavy_slip_scale.get()
+        self.usbc.set_texture_hv_sl(new_constant)
+
+    def set_sb_ang(self):
+        new_constant = self.speed_bump_scale.get()
+        self.usbc.set_texture_sp(new_constant)
 
 
 if __name__ == "__main__":
