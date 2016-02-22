@@ -1,6 +1,7 @@
 #include <p24FJ128GB206.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <math.h>
 #include "config.h"
 #include "common.h"
 #include "ui.h"
@@ -123,12 +124,12 @@ void damper(float ddegs) {
     }
     // Determine how much to resist
     float new_duty = fabsf(ddegs * VEL_SCALER);
-    if (new_duty > .85) {
-        new_duty = .85;
+
+    if (new_duty > .95) {
+        new_duty = .95;
     }
     pwm_set_duty(new_duty);
     pwm_set_direction((drive_direction + 1) % 2);
-    printf("DUTY: %f, DIR: %f\r\n", new_duty, drive_direction);
 }
 
 // float PID_control(PID *self) {
@@ -163,36 +164,44 @@ float count_to_deg(float new_count) {
     return degs; 
 }
 
-void motor_control(float degs, float target_degs) {
-    float diff = degs - target_degs;
-    float new_duty;
-    float threshold = 1;
-    unsigned char direction;
-
-    if (diff > threshold) {
-        direction = 1;
-        new_duty = 0.85;
-    } else if (diff < -threshold) {
-        direction = 0;
-        new_duty = 0.85;
-    } else {
-        direction = pwm_direction;
-        new_duty = 0.0;
-    }
-    pwm_set_direction(direction);
-    pwm_set_duty(new_duty);
-}
-
 void VendorRequests(void) {
     WORD32 address;
     WORD result;
+    WORD temp;
+    uint16_t temp0, temp1;
+    float move_degs;
 
     switch (USB_setup.bRequest) {
         WORD temp;
         case TOGGLE_LED1:
             led_toggle(&led1);
-            BD[EP0IN].bytecount = 0;  // set EP0 IN byte count to 0
-            BD[EP0IN].status = 0xC8;  // send packet as DATA1, set UOWN bit
+            BD[EP0IN].bytecount = 0;         // set EP0 IN byte count to 0
+            BD[EP0IN].status = 0xC8;         // send packet as DATA1, set UOWN bit
+            break;
+        case TOGGLE_LED2:
+            led_toggle(&led2);
+            BD[EP0IN].bytecount = 0;         // set EP0 IN byte count to 0
+            BD[EP0IN].status = 0xC8;         // send packet as DATA1, set UOWN bit
+            break;
+        case TOGGLE_LED3:
+            led_toggle(&led3);
+            BD[EP0IN].bytecount = 0;         // set EP0 IN byte count to 0
+            BD[EP0IN].status = 0xC8;         // send packet as DATA1, set UOWN bit
+            break;
+        case READ_SW1:
+            BD[EP0IN].address[0] = (uint8_t)sw_read(&sw1);
+            BD[EP0IN].bytecount = 1;         // set EP0 IN byte count to 1
+            BD[EP0IN].status = 0xC8;         // send packet as DATA1, set UOWN bit
+            break;
+        case READ_SW2:
+            BD[EP0IN].address[0] = (uint8_t)sw_read(&sw2);
+            BD[EP0IN].bytecount = 1;         // set EP0 IN byte count to 1
+            BD[EP0IN].status = 0xC8;         // send packet as DATA1, set UOWN bit
+            break;
+        case READ_SW3:
+            BD[EP0IN].address[0] = (uint8_t)sw_read(&sw3);
+            BD[EP0IN].bytecount = 1;         // set EP0 IN byte count to 1
+            BD[EP0IN].status = 0xC8;         // send packet as DATA1, set UOWN bit
             break;
         case ENC_READ_REG:
             result = enc_readReg(USB_setup.wValue);
@@ -201,44 +210,28 @@ void VendorRequests(void) {
             BD[EP0IN].bytecount = 2;  // set EP0 IN byte count to 1
             BD[EP0IN].status = 0xC8;  // send packet as DATA1, set UOWN bit
             break;
-        case SET_KP:
-            // val1 = USB_setup.wValue.w;
-            // val2 = USB_setup.wIndex.w;
+        case SET_DAMPER_COEF:
+            VEL_SCALER = (float)(USB_setup.wValue.w)/(float)(USB_setup.wIndex.w);
+            printf("Set VEL_SCALER to %4f\r\n", VEL_SCALER);
             BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
             BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
             break;
-        case SET_KI:
-            // val1 = USB_setup.wValue.w;
-            // val2 = USB_setup.wIndex.w;
-            BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
-            BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
-            break;
-        case SET_KD:
-            // val1 = USB_setup.wValue.w;
-            // val2 = USB_setup.wIndex.w;
-            BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
-            BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
-            break;
-        case SET_DUTY:
-            pwm_set_raw_duty(USB_setup.wValue.w);
-            // val2 = USB_setup.wIndex.w;
-            BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
-            BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
-            break;
-        // case GET_MOTOR_CURRENT:
-        //     temp.w = motor.current;
+        // case READ_VELOCITY:
+        //     move_degs=(delta_degs + 50) * 100;
+        //     temp.w = round(move_degs);
         //     BD[EP0IN].address[0] = temp.b[0];
         //     BD[EP0IN].address[1] = temp.b[1];
-        //     BD[EP0IN].bytecount = 2;    // set EP0 IN byte count to 4
+        //     BD[EP0IN].bytecount = 2;    // set EP0 IN byte count to 2
         //     BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
         //     break;
-        // case GET_SETPOINT:
-        //     temp.w = cur_control.set_point;
+        // case READ_POSITION:
+        //     move_degs=(current_degs + 50) * 100;
+        //     temp.w = round(move_degs);
         //     BD[EP0IN].address[0] = temp.b[0];
         //     BD[EP0IN].address[1] = temp.b[1];
-        //     BD[EP0IN].bytecount = 2;    // set EP0 IN byte count to 4
+        //     BD[EP0IN].bytecount = 2;    // set EP0 IN byte count to 2
         //     BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
-        //     break;         
+        //     break;
         default:
             USB_error_flags |= 0x01;  // set Request Error Flag
     }
@@ -281,18 +274,6 @@ void setup(void) {
     timer_start(&timer2);
     timer_start(&timer3);
 
-    // // Configure motor current conversion coefficient
-    // CURRENT_CONV_COEF = MAX_ADC_OUTPUT * MOTOR_VOLTAGE_RESISTOR;
-    // cur_control.Kp = KP;
-    // cur_control.Kd = KD;
-    // cur_control.Ki = KI;
-    // cur_control.dt = LOOP_TIME;
-    // cur_control.integ_min = -100;
-    // cur_control.integ_max = 100;
-    // cur_control.integ_state = 0;
-    // read_motor_current(&motor);
-    // cur_control.prev_position = convert_motor_torque(motor.current);
-
     // Configure dual PWM signals for bidirectional motor control
     oc_pwm(&oc1, PWM_I1, NULL, pwm_freq, pwm_duty);
     oc_pwm(&oc2, PWM_I2, NULL, pwm_freq, pwm_duty);
@@ -306,38 +287,25 @@ void setup(void) {
 
 int main(void) {
     setup();
-    // unsigned char angle_array[14];  // LSB will be angle_array[0]
 
-    // float pwm_duty_array[4] = {0.40, 0.41, 0.42, 0.43};
-    // float pwm_duty_array[4] = {0.12, 0.12, 0, 0};
-
-    // pwm_set_direction(!pwm_direction);
-    // pwm_set_duty(0);
     printf("%s\r\n", "STARTING LOOP");
     float encoder_master_count = 0;
     float previous_degs = 0;
     float current_degs = 0;
+    float delta_degs = 0;
     uint16_t current_ticks = 0;
     uint16_t previous_ticks = spi_read_ticks();
-    float delta_degs = 0;
-    // float pid_command = 0;
-    pwm_set_duty(.60);
-    pwm_set_direction(0);
-    
+   
     while (1) {
         if (timer_flag(&timer2)) {
             // Blink green light to show normal operation.
             timer_lower(&timer2);
             led_toggle(&led2);
-            // printf("%s\r\n", "BLINK LIGHT");
-            // printf("MASTER COUNT: %f\r\n", encoder_master_count);
-            // printf("MASTER DEGS: %f\r\n", degs);
-            // printf("MOTOR VOLTS: %d\r\n", pin_read(MOTOR_VOLTAGE));
+            printf("ddegs %3f, dd %d\r\n", delta_degs, drive_direction);
         }
 
         if (timer_flag(&timer3)) {
             timer_lower(&timer3);
-            current_degs = count_to_deg(encoder_master_count);
             delta_degs = current_degs - previous_degs;
             damper(delta_degs);
             previous_degs = current_degs;
@@ -347,18 +315,10 @@ int main(void) {
             // If switch 2 is pressed, the UART output terminal is cleared.
             printf("%s", clear);
         }
-        // __builtin__disi(0x3FFF);
         ServiceUSB();
         current_ticks = spi_read_ticks();
         encoder_master_count = encoder_counter(current_ticks, previous_ticks, encoder_master_count);
+        current_degs = count_to_deg(encoder_master_count);
         previous_ticks = current_ticks;
-        // __builtin__disi(0x0000);
     }
 }
-
-// void __attribute__((interrupt, auto_psv)) _OC1Interrupt(void) {
-//     bitclear(&IFS0, 2);
-//     motor.raw_volts = pin_read(MOTOR_VOLTAGE) >> 6; // Shift to get only the 10 bits from the ADC
-// }
-
-// l

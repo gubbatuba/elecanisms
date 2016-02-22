@@ -20,6 +20,9 @@ class USBCommunications(object):
         self.SET_SPRING_CONSTANT = 11
         self.READ_POSITION = 12
         self.READ_CURRENT = 13
+        self.READ_VELOCITY = 14
+        self.SET_DAMPER_COEF = 15
+
 
         self.divisor0 = 100
         self.dev = usb.core.find(idVendor=0x6666, idProduct=0x0003)
@@ -130,6 +133,22 @@ class USBCommunications(object):
             ret_value = int(ret[0]) + int(ret[1]) * 256
             return (ret_value/100.)- 50
 
+    def read_velocity(self):
+        try:
+            ret = self.dev.ctrl_transfer(0xC0, self.READ_VELOCITY, 0, 0, 2)
+        except usb.core.USBError, e:
+            print e
+            print "Could not send READ_POSITION vendor request."
+        else:
+            ret_value = int(ret[0]) + int(ret[1]) * 256
+            return (ret_value/100.)- 50
+
+    def set_damper_coef(self, K):
+        try:
+            ret = self.dev.ctrl_transfer(
+                0x40, self.SET_DAMPER_COEF, int(K * self.divisor0), self.divisor0)
+        except usb.core.USBError:
+            print "Could not send SET_SPRING_CONSTANT vendor request."
     # def send_num(self, num):
     #     msg = 'test'
     #     msg = struct.pack('i', num)
