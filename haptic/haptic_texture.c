@@ -164,31 +164,31 @@ void VendorRequests(void) {
             BD[EP0IN].status = 0xC8;  // send packet as DATA1, set UOWN bit
             break;
         case SET_TEXTURE_LT_ST:
-            light_stick_deg = (float)(USB_setup.wValue.w)/(float)(USB_setup.wIndex.w);
+            light_stick_deg = ((double)(USB_setup.wValue.w)/(double)(USB_setup.wIndex.w)) - 50;
             printf("Set wall angle to %4f\r\n", light_stick_deg);
             BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
             BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
             break;
         case SET_TEXTURE_HV_ST:
-            heavy_stick_deg= (float)(USB_setup.wValue.w)/(float)(USB_setup.wIndex.w);
+            heavy_stick_deg= ((double)(USB_setup.wValue.w)/(double)(USB_setup.wIndex.w)) - 50;
             printf("Set wall angle to %4f\r\n", heavy_stick_deg);
             BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
             BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
             break;
         case SET_TEXTURE_LT_SL:
-            light_slip_deg = (float)(USB_setup.wValue.w)/(float)(USB_setup.wIndex.w);
+            light_slip_deg = ((double)(USB_setup.wValue.w)/(double)(USB_setup.wIndex.w)) - 50;
             printf("Set wall angle to %4f\r\n", light_slip_deg);
             BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
             BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
             break;
         case SET_TEXTURE_HV_SL:
-            heavy_slip_deg = (float)(USB_setup.wValue.w)/(float)(USB_setup.wIndex.w);
+            heavy_slip_deg = ((double)(USB_setup.wValue.w)/(double)(USB_setup.wIndex.w)) - 50;
             printf("Set wall angle to %4f\r\n", heavy_slip_deg);
             BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
             BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
             break;
         case SET_TEXTURE_SB:
-            speed_bump = (float)(USB_setup.wValue.w)/(float)(USB_setup.wIndex.w);
+            speed_bump = ((double)(USB_setup.wValue.w)/(double)(USB_setup.wIndex.w)) - 50;
             printf("Set wall angle to %4f\r\n", speed_bump);
             BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
             BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit

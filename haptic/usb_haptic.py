@@ -23,7 +23,11 @@ class USBCommunications(object):
         self.READ_VELOCITY = 14
         self.SET_DAMPER_COEF = 15
         self.SET_WALL_ANGLE = 16
-        self.SET_TEXTURE = 17
+        self.SET_TEXTURE_LT_ST = 17
+        self.SET_TEXTURE_HV_ST = 18
+        self.SET_TEXTURE_LT_SL = 19
+        self.SET_TEXTURE_HV_SL = 20
+        self.SET_TEXTURE_SB = 21
 
         self.divisor0 = 100
         self.dev = usb.core.find(idVendor=0x6666, idProduct=0x0003)
@@ -162,35 +166,35 @@ class USBCommunications(object):
     def set_texture_lt_st(self, light_stick_deg):
         try:
             ret = self.dev.ctrl_transfer(
-                0x40, self.SET_DAMPER_COEF, int(light_stick_deg * self.divisor0), self.divisor0)
+                0x40, self.SET_TEXTURE_LT_ST, int((light_stick_deg + 50) * self.divisor0), self.divisor0)
         except usb.core.USBError:
             print "Could not send SET_TEXTURE_ANGLE_LT_ST vendor request."
 
     def set_texture_hv_st(self, heavy_stick_deg):
         try:
             ret = self.dev.ctrl_transfer(
-                0x40, self.SET_DAMPER_COEF, int(heavy_stick_deg * self.divisor0), self.divisor0)
+                0x40, self.SET_TEXTURE_HV_ST, int((heavy_stick_deg + 50) * self.divisor0), self.divisor0)
         except usb.core.USBError:
             print "Could not send SET_TEXTURE_ANGLE_HV_ST vendor request."
 
     def set_texture_lt_sl(self, light_slip_deg):
         try:
             ret = self.dev.ctrl_transfer(
-                0x40, self.SET_DAMPER_COEF, int(light_slip_deg * self.divisor0), self.divisor0)
+                0x40, self.SET_TEXTURE_LT_SL, int((light_slip_deg + 50) * self.divisor0), self.divisor0)
         except usb.core.USBError:
             print "Could not send SET_TEXTURE_ANGLE_LT_SL vendor request."
 
     def set_texture_hv_sl(self, heavy_slip_deg):
         try:
             ret = self.dev.ctrl_transfer(
-                0x40, self.SET_DAMPER_COEF, int(heavy_slip_deg * self.divisor0), self.divisor0)
+                0x40, self.SET_TEXTURE_HV_SL, int((heavy_slip_deg + 50) * self.divisor0), self.divisor0)
         except usb.core.USBError:
             print "Could not send SET_TEXTURE_ANGLE_HV_SL vendor request."
 
     def set_texture_sp(self, speed_bump):
         try:
             ret = self.dev.ctrl_transfer(
-                0x40, self.SET_DAMPER_COEF, int(speed_bump * self.divisor0), self.divisor0)
+                0x40, self.SET_TEXTURE_SB, int((speed_bump + 50) * self.divisor0), self.divisor0)
         except usb.core.USBError:
             print "Could not send SET_TEXTURE_ANGLE_SP vendor request."
 
