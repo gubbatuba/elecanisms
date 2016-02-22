@@ -96,6 +96,11 @@ double encoder_counter(uint16_t current_ticks, uint16_t previous_ticks, double p
     }
     if (difference < -8192) {
         difference = -16384 - difference;
+    }    if (current_ticks > previous_ticks){
+        current_direction = 0;
+    }
+    if (current_ticks < previous_ticks){
+        current_direction = 1;
     }
     double new_count = previous_count + (double)(difference);
     return new_count;
@@ -103,26 +108,16 @@ double encoder_counter(uint16_t current_ticks, uint16_t previous_ticks, double p
 
 void wall(double degs, double wall_deg) {
 	// creates a "wall" to hit
-	double diff = degs - wall_deg;
 	float new_duty;
 	unsigned char direction;
-	double direction_threshold = 1;
-	double threshold = 3;
-	// left bound
-	if ((diff > direction_threshold) && (diff < (threshold))){
-		direction = 1;
-		new_duty = 0.90;
-		printf("left bound\r\n");	
-	} 
-	// right bound
-	else if ((diff < -direction_threshold) && (diff > (-threshold))){
-		direction = 0;
-		new_duty = 0.90;
-		printf("right bound\r\n");
-	} 
-	else {
+	double wall_buffer = 2;
+	if ((degs <= wall_deg+wall_buffer) && (degs >= wall_deg-wall_buffer)){
+		direction = (current_direction+1)%2;
+		new_duty = 0.95;
+	} else {
 		new_duty = 0.0;
 	}
+
     pwm_set_direction(direction);
     pwm_set_duty(new_duty);
 }
@@ -264,7 +259,7 @@ int main(void) {
     printf("%s\n", "STARTING LOOP");
     double encoder_master_count = 0;
     double degs = 0;
-    double target_degs = 10;
+    double target_degs = -10;
     uint16_t current_ticks = 0;
     uint16_t previous_ticks = spi_read_ticks();
     while (1) {
@@ -272,8 +267,8 @@ int main(void) {
             // Blink green light to show normal operation.
             timer_lower(&timer2);
             led_toggle(&led2);
-            printf("%s\r\n", "BLINK LIGHT");
-            printf("MASTER COUNT: %f\r\n", encoder_master_count);
+            // printf("%s\r\n", "BLINK LIGHT");
+            // printf("MASTER COUNT: %f\r\n", encoder_master_count);
             printf("MASTER DEGS: %f\r\n", degs);
         }
         if (!sw_read(&sw2)) {
