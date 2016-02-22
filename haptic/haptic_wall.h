@@ -55,4 +55,5 @@ char clear[5]  = {27, '[', '2', 'J', 0};  // Terminal CLEAR sequence
 // Angle Conversion
 // convrate = 715.15
 uint16_t head_center = 0;
+double WALL_ANGLE = 20;
 

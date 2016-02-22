@@ -266,10 +266,10 @@ int main(void) {
 
     // pwm_set_direction(!pwm_direction);
     // pwm_set_duty(0);
-    printf("%s\n", "STARTING LOOP");
+    printf("%s\r\n", "STARTING LOOP");
     double encoder_master_count = 0;
     double degs = 0;
-    double target_degs = 0;
+
     uint16_t current_ticks = 0;
     uint16_t previous_ticks = spi_read_ticks();
     while (1) {
@@ -279,7 +279,7 @@ int main(void) {
             led_toggle(&led2);
             // printf("%s\r\n", "BLINK LIGHT");
             // printf("MASTER COUNT: %f\r\n", encoder_master_count);
-            printf("MASTER DEGS: %f\r\n", degs);
+            // printf("MASTER DEGS: %f\r\n", degs);
         }
         if (!sw_read(&sw2)) {
             // If switch 2 is pressed, the UART output terminal is cleared.
@@ -288,12 +288,9 @@ int main(void) {
         current_ticks = spi_read_ticks();
         encoder_master_count = encoder_counter(current_ticks, previous_ticks, encoder_master_count);
         degs = count_to_deg(encoder_master_count);
-        wall(degs, target_degs);
+        wall(degs, WALL_ANGLE);
         previous_ticks = current_ticks;
-
         ServiceUSB();
-        wall_angle = wall(degs, wall_deg);
-        pin_toggle(DEBUGD1);  // Heartbeat signal
     }
 }
 

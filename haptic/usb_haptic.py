@@ -25,7 +25,6 @@ class USBCommunications(object):
         self.SET_WALL_ANGLE = 16
         self.SET_TEXTURE = 17
 
-
         self.divisor0 = 100
         self.dev = usb.core.find(idVendor=0x6666, idProduct=0x0003)
         if self.dev is None:
@@ -155,8 +154,9 @@ class USBCommunications(object):
     def set_wall_angle(self, wall_angle):
         try:
             ret = self.dev.ctrl_transfer(
-                0x40, self.SET_DAMPER_COEF, int(wall_angle * self.divisor0), self.divisor0)
-        except usb.core.USBError:
+                0x40, self.SET_WALL_ANGLE, int((wall_angle + 50) * self.divisor0), self.divisor0)
+        except usb.core.USBError, e:
+            print e
             print "Could not send SET_WALL_ANGLE vendor request."
 
     def set_texture_lt_st(self, light_stick_deg):
