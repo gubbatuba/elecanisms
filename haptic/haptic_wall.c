@@ -190,6 +190,12 @@ void VendorRequests(void) {
             BD[EP0IN].bytecount = 1;  // set EP0 IN byte count to 1
             BD[EP0IN].status = 0xC8;  // send packet as DATA1, set UOWN bit
             break;
+        case READ_WALL_ANGLE:
+            WALL_ANGLE = (float)(USB_setup.wValue.w)/(float)(USB_setup.wIndex.w);
+            printf("Set wall angle to %4f\r\n", WALL ANGLE);
+            BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
+            BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
+            break;
         default:
             USB_error_flags |= 0x01;  // set Request Error Flag
     }
@@ -203,15 +209,19 @@ void VendorRequestsIn(void) {
 }
 
 void VendorRequestsOut(void) {
-//    WORD32 address;
-//
-//    switch (USB_request.setup.bRequest) {
-//        case ENC_WRITE_REGS:
-//            enc_writeRegs(USB_request.setup.wValue.b[0], BD[EP0OUT].address, USB_request.setup.wLength.b[0]);
-//            break;
-//        default:
-//            USB_error_flags |= 0x01;                    // set Request Error Flag
-//    }
+    switch (USB_request.setup.bRequest) {
+        default:
+            USB_error_flags |= 0x01;                    // set Request Error Flag
+    }
+
+   // WORD32 address;
+   // switch (USB_request.setup.bRequest) {
+   //     case ENC_WRITE_REGS:
+   //         enc_writeRegs(USB_request.setup.wValue.b[0], BD[EP0OUT].address, USB_request.setup.wLength.b[0]);
+   //         break;
+   //     default:
+   //         USB_error_flags |= 0x01;                    // set Request Error Flag
+   // }
 }
 
 void setup(void) {
@@ -259,7 +269,7 @@ int main(void) {
     printf("%s\n", "STARTING LOOP");
     double encoder_master_count = 0;
     double degs = 0;
-    double target_degs = -10;
+    double target_degs = 0;
     uint16_t current_ticks = 0;
     uint16_t previous_ticks = spi_read_ticks();
     while (1) {
@@ -281,6 +291,10 @@ int main(void) {
         wall(degs, target_degs);
         previous_ticks = current_ticks;
         ServiceUSB();
+
+        ServiceUSB();
+        wall_angle = wall(degs, wall_deg);
+        pin_toggle(DEBUGD1);  // Heartbeat signal
     }
 }
 

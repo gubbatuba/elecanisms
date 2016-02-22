@@ -21,14 +21,22 @@ _PIN* SPI_MOSI = &D[0];     // MOSI pin
 _PIN* SPI_MISO = &D[1];     // MISO pin
 _PIN* SPI_CS = &D[3];       // Chip select pin
 
-#define TOGGLE_LED1         1
-#define TOGGLE_LED2         2
-#define READ_SW1            3
-#define ENC_WRITE_REG       4
-#define ENC_READ_REG        5
-#define TOGGLE_LED3         8
-#define READ_SW2            9
-#define READ_SW3            10
+#define TOGGLE_LED1     1
+#define TOGGLE_LED2     2
+#define TOGGLE_LED3     3
+#define READ_SW1        4
+#define READ_SW2        5
+#define READ_SW3        6
+#define ENC_READ_REG    7
+#define SET_PID_P       8
+#define SET_PID_I       9
+#define SET_PID_D       10
+#define SET_SPRING_CONSTANT     11
+#define READ_POSITION           12
+#define READ_CURRENT            13
+#define READ_VELOCITY           14
+#define SET_DAMPER_COEF         15
+#define READ_WALL_ANGLE			16
 
 #define REG_MAG_ADDR        0x3FFE
 
