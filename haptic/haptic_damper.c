@@ -222,8 +222,8 @@ void VendorRequests(void) {
             BD[EP0IN].address[0] = temp0.b[0];
             BD[EP0IN].address[1] = temp0.b[1];
             temp1.w = round((current_duty_cycle* (pwm_direction == 1) ? 1:-1) + 5 * 1000);
-            BD[EP0IN].address[2] = temp0.b[0];
-            BD[EP0IN].address[3] = temp0.b[1];
+            BD[EP0IN].address[2] = temp1.b[0];
+            BD[EP0IN].address[3] = temp1.b[1];
             BD[EP0IN].bytecount = 4;    // set EP0 IN byte count to 2
             BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
             break;

@@ -28,6 +28,7 @@ class USBCommunications(object):
         self.SET_TEXTURE_LT_SL = 19
         self.SET_TEXTURE_HV_SL = 20
         self.SET_TEXTURE_SB = 21
+        self.READ_HAPTIC_POS = 25
         self.READ_DAMPER_VEL = 26
 
         self.divisor0 = 100
@@ -199,7 +200,6 @@ class USBCommunications(object):
         except usb.core.USBError:
             print "Could not send SET_TEXTURE_ANGLE_SP vendor request."
 
-
     def read_damper_vel(self):
         try:
             ret = self.dev.ctrl_transfer(0xC0, self.READ_DAMPER_VEL, 0, 0, 4)
@@ -213,6 +213,18 @@ class USBCommunications(object):
             dc = (raw_dc/1000.) - 5
             return [vel, dc]
 
+    def read_haptic_pos(self):
+        try:
+            ret = self.dev.ctrl_transfer(0xC0, self.READ_HAPTIC_POS, 0, 0, 4)
+        except usb.core.USBError, e:
+            print e
+            print "Could not send READ_POSITION vendor request."
+        else:
+            raw_pos = int(ret[0])+int(ret[1])*256
+            raw_dc = int(ret[2])+int(ret[3])*256
+            pos = raw_pos/100. - 50
+            dc = (raw_dc/1000.) - 5
+            return [pos, dc]
     # def send_num(self, num):
     #     msg = 'test'
     #     msg = struct.pack('i', num)

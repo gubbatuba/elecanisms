@@ -37,6 +37,10 @@ _PIN* SPI_CS = &D[3];       // Chip select pin
 #define READ_VELOCITY           14
 #define SET_DAMPER_COEF         15
 #define READ_WALL_ANGLE			16
+#define READ_HAPTIC_POS         25
+
+#define round(x) ((x)>=0?(uint16_t)((x)+0.5):(uint16_t)((x)-0.5))
+
 
 #define REG_MAG_ADDR        0x3FFE
 
@@ -56,4 +60,5 @@ char clear[5]  = {27, '[', '2', 'J', 0};  // Terminal CLEAR sequence
 // convrate = 715.15
 uint16_t head_center = 0;
 double WALL_ANGLE = 20;
-
+float current_pwm = 0;
+double degs = 0;

@@ -61,7 +61,7 @@ double encoder_counter(uint16_t current_ticks, uint16_t previous_ticks, double p
 
 }
 
-void texture(double degs){
+float texture(double degs){
     double dist = 4;
     double bump_dist = 2;
     float new_duty;
@@ -69,30 +69,30 @@ void texture(double degs){
     if ((degs > (light_stick_deg-dist)) && (degs < (light_stick_deg+dist))){
         direction = (direction+1)%2;
         new_duty = 0.65;
-        printf("light stick\r\n");  
+        // printf("light stick\r\n");  
     } else if  ((degs > (heavy_stick_deg-dist)) && (degs < (heavy_stick_deg+dist))){
         direction = (direction+1)%2;
         new_duty = 0.95;
-        printf("heavy stick\r\n");  
+        // printf("heavy stick\r\n");  
     } else if  ((degs > (light_slip_deg-dist)) && (degs < (light_slip_deg+dist))){
         direction = current_direction;
         new_duty = 0.65;
-        printf("light slip\r\n");  
+        // printf("light slip\r\n");  
     } else if  ((degs > (heavy_slip_deg-dist)) && (degs < (heavy_slip_deg+dist))){
         direction = current_direction;
         new_duty = 0.85;
-        printf("heavy slip\r\n degs %f\r\n",degs );  
+        // printf("heavy slip\r\n degs %f\r\n",degs );  
     } else if  ((degs > (speed_bump-bump_dist)) && (degs < (speed_bump+bump_dist))){
         direction = (direction+1)%2;
         new_duty = 0.55;
-        printf("speed_bump\r\n degs %f\r\n",degs );  
+        // printf("speed_bump\r\n degs %f\r\n",degs );  
     } 
     else {
         new_duty = 0.0;
     }
     pwm_set_direction(direction);
     pwm_set_duty(new_duty);
-    return new_duty
+    return new_duty;
 }
 
 //Change master count to degs
@@ -125,6 +125,9 @@ void motor_control(double degs, double target_degs){
 void VendorRequests(void) {
     WORD32 address;
     WORD result;
+    WORD temp;
+    WORD temp0, temp1;
+    float move_degs;
 
     switch (USB_setup.bRequest) {
         case TOGGLE_LED1:
@@ -194,28 +197,41 @@ void VendorRequests(void) {
             BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
             BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
             break;
-        case READ_TEXTURE_PWM:
-            READ_TEXTURE_PWM=(degs + 50) * 100;
-            temp.w = round(move_degs);
-            BD[EP0IN].address[0] = temp.b[0];
-            BD[EP0IN].address[1] = temp.b[1];
-            BD[EP0IN].bytecount = 2;    // set EP0 IN byte count to 2
-            BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
-            break;
-        case READ_TEXTURE_DIRECTION:
-            move_degs=(degs + 50) * 100;
-            temp.w = round(move_degs);
-            BD[EP0IN].address[0] = temp.b[0];
-            BD[EP0IN].address[1] = temp.b[1];
-            BD[EP0IN].bytecount = 2;    // set EP0 IN byte count to 2
-            BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
-            break;
-        case READ_TEXTURE_ANGLE:
-            move_degs=(degs + 50) * 100;
-            temp.w = round(move_degs);
-            BD[EP0IN].address[0] = temp.b[0];
-            BD[EP0IN].address[1] = temp.b[1];
-            BD[EP0IN].bytecount = 2;    // set EP0 IN byte count to 2
+        // case READ_TEXTURE_PWM:
+        //     READ_TEXTURE_PWM=(degs + 50) * 100;
+        //     temp.w = round(move_degs);
+        //     BD[EP0IN].address[0] = temp.b[0];
+        //     BD[EP0IN].address[1] = temp.b[1];
+        //     BD[EP0IN].bytecount = 2;    // set EP0 IN byte count to 2
+        //     BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
+        //     break;
+        // case READ_TEXTURE_DIRECTION:
+        //     move_degs=(degs + 50) * 100;
+        //     temp.w = round(move_degs);
+        //     BD[EP0IN].address[0] = temp.b[0];
+        //     BD[EP0IN].address[1] = temp.b[1];
+        //     BD[EP0IN].bytecount = 2;    // set EP0 IN byte count to 2
+        //     BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
+        //     break;
+        // case READ_TEXTURE_ANGLE:
+        //     move_degs=(degs + 50) * 100;
+        //     temp.w = round(move_degs);
+        //     BD[EP0IN].address[0] = temp.b[0];
+        //     BD[EP0IN].address[1] = temp.b[1];
+        //     BD[EP0IN].bytecount = 2;    // set EP0 IN byte count to 2
+        //     BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
+        //     break;
+        case READ_HAPTIC_POS:
+            temp0.w = round((degs + 50) * 100);
+            BD[EP0IN].address[0] = temp0.b[0];
+            BD[EP0IN].address[1] = temp0.b[1];
+            float step1 = (current_pwm * (float)((pwm_direction == 1) ? 1:-1));
+            temp1.w = round( (step1 + 5) * 1000);
+            printf("CURRPWM: %2f, %2f\r\n", current_pwm, step1 );
+            printf("%d\r\n", temp1.w);
+            BD[EP0IN].address[2] = temp1.b[0];
+            BD[EP0IN].address[3] = temp1.b[1];
+            BD[EP0IN].bytecount = 4;    // set EP0 IN byte count to 2
             BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
             break;
         default:
@@ -326,7 +342,6 @@ int main(void) {
     // pwm_set_duty(0);
     printf("%s\n", "STARTING LOOP");
     double encoder_master_count = 0;
-    double degs = 0;
     uint16_t current_ticks = 0;
     uint16_t previous_ticks = spi_read_ticks();
     double target_degs = 35;
@@ -337,7 +352,7 @@ int main(void) {
             led_toggle(&led2);
             // printf("%s\r\n", "BLINK LIGHT");
             // printf("MASTER COUNT: %f\r\n", encoder_master_count);
-            printf("MASTER DEGS: %f\r\n", degs);
+            // printf("MASTER DEGS: %f\r\n", degs);
         }
         if (!sw_read(&sw2)) {
             // If switch 2 is pressed, the UART output terminal is cleared.

@@ -106,7 +106,7 @@ double encoder_counter(uint16_t current_ticks, uint16_t previous_ticks, double p
     return new_count;
 }
 
-void wall(double degs, double wall_deg) {
+float wall(double degs, double wall_deg) {
 	// creates a "wall" to hit
 	float new_duty;
 	unsigned char direction;
@@ -120,7 +120,7 @@ void wall(double degs, double wall_deg) {
 
     pwm_set_direction(direction);
     pwm_set_duty(new_duty);
-    return new_duty
+    return new_duty;
 }
 
 //Change master count to degs
@@ -152,6 +152,9 @@ void motor_control(double degs, double target_degs) {
 void VendorRequests(void) {
     WORD32 address;
     WORD result;
+    WORD temp;
+    WORD temp0, temp1;
+    float move_degs;
 
     switch (USB_setup.bRequest) {
         case TOGGLE_LED1:
@@ -191,16 +194,26 @@ void VendorRequests(void) {
             BD[EP0IN].bytecount = 1;  // set EP0 IN byte count to 1
             BD[EP0IN].status = 0xC8;  // send packet as DATA1, set UOWN bit
             break;
-        case READ_WALL_ANGLE:
-            wall_angle = wall(degs, WALL_ANGLE);
-            printf("Set wall angle to %4f\r\n", WALL_ANGLE);
-            BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
-            BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
-            break;
-        case READ_WALL_ANGLE:
-            wall_angle = wall(degs, WALL_ANGLE);
-            printf("Set wall angle to %4f\r\n", WALL_ANGLE);
-            BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
+        // case READ_WALL_ANGLE:
+        //     wall_angle = wall(degs, WALL_ANGLE);
+        //     printf("Set wall angle to %4f\r\n", WALL_ANGLE);
+        //     BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
+        //     BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
+        //     break;
+        // case READ_WALL_ANGLE:
+        //     wall_angle = wall(degs, WALL_ANGLE);
+        //     printf("Set wall angle to %4f\r\n", WALL_ANGLE);
+        //     BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
+        //     BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
+        //     break;
+        case READ_HAPTIC_POS:
+            temp0.w = round((degs + 50) * 100);
+            BD[EP0IN].address[0] = temp0.b[0];
+            BD[EP0IN].address[1] = temp0.b[1];
+            temp1.w = round((current_pwm * (pwm_direction == 1) ? 1:-1) + 5 * 1000);
+            BD[EP0IN].address[2] = temp1.b[0];
+            BD[EP0IN].address[3] = temp1.b[1];
+            BD[EP0IN].bytecount = 4;    // set EP0 IN byte count to 2
             BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
             break;
         default:
@@ -275,7 +288,6 @@ int main(void) {
     // pwm_set_duty(0);
     printf("%s\r\n", "STARTING LOOP");
     double encoder_master_count = 0;
-    double degs = 0;
 
     uint16_t current_ticks = 0;
     uint16_t previous_ticks = spi_read_ticks();
@@ -295,7 +307,7 @@ int main(void) {
         current_ticks = spi_read_ticks();
         encoder_master_count = encoder_counter(current_ticks, previous_ticks, encoder_master_count);
         degs = count_to_deg(encoder_master_count);
-        wall(degs, WALL_ANGLE);
+        current_pwm = wall(degs, WALL_ANGLE);
         previous_ticks = current_ticks;
         ServiceUSB();
     }
