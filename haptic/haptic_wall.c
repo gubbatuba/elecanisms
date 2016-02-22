@@ -111,25 +111,6 @@ void wall(double degs, double wall_deg) {
 	float new_duty;
 	unsigned char direction;
 	double wall_buffer = 2;
-	// if ((current_direction == 0) && (degs <= wall_deg)){
-	// 	new_duty = 0.75;
-	// 	// direction = current_direction;
-	// 	printf("wall_right\r\n"); 
-	// }
-	// if ((current_direction == 1) && (degs >= wall_deg)){
-	// 	new_duty = 0.75;
-	// 	// direction = current_direction;
-	// 	printf("wall_left\r\n");
-	// }
-	// else if ((current_direction = 0) && (degs >= wall_deg)){
-	// 	new_duty = 0.0;
-	// 	printf("wall_right_still\r\n");
-	// }
-	// else if ((current_direction = 1) && (degs <= wall_deg)){
-	// 	new_duty = 0.0;
-	// 	printf("wall_left_still\r\n");
-	// }
-
 	if ((degs <= wall_deg+wall_buffer) && (degs >= wall_deg-wall_buffer)){
 		direction = (current_direction+1)%2;
 		new_duty = 0.95;
