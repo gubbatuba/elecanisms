@@ -168,6 +168,36 @@ void VendorRequests(void) {
             BD[EP0IN].bytecount = 1;  // set EP0 IN byte count to 1
             BD[EP0IN].status = 0xC8;  // send packet as DATA1, set UOWN bit
             break;
+        case SET_TEXTURE_LT_ST:
+            TEXTURE_LT_ST = (float)(USB_setup.wValue.w)/(float)(USB_setup.wIndex.w);
+            printf("Set wall angle to %4f\r\n", TEXTURE_LT_STE);
+            BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
+            BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
+            break;
+        case SET_TEXTURE_HV_ST:
+            TEXTURE_HV_ST = (float)(USB_setup.wValue.w)/(float)(USB_setup.wIndex.w);
+            printf("Set wall angle to %4f\r\n", TEXTURE_HV_ST);
+            BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
+            BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
+            break;
+        case SET_TEXTURE_LT_SL:
+            TEXTURE_LT_SL = (float)(USB_setup.wValue.w)/(float)(USB_setup.wIndex.w);
+            printf("Set wall angle to %4f\r\n", TEXTURE_LT_SL);
+            BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
+            BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
+            break;
+        case SET_TEXTURE_HV_SL:
+            TEXTURE_HV_SL = (float)(USB_setup.wValue.w)/(float)(USB_setup.wIndex.w);
+            printf("Set wall angle to %4f\r\n", TEXTURE_HV_SL);
+            BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
+            BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
+            break;
+        case SET_TEXTURE_SB:
+            TEXTURE_SB = (float)(USB_setup.wValue.w)/(float)(USB_setup.wIndex.w);
+            printf("Set wall angle to %4f\r\n", TEXTURE_SB);
+            BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
+            BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
+            break;
         default:
             USB_error_flags |= 0x01;  // set Request Error Flag
     }
@@ -181,15 +211,10 @@ void VendorRequestsIn(void) {
 }
 
 void VendorRequestsOut(void) {
-//    WORD32 address;
-//
-//    switch (USB_request.setup.bRequest) {
-//        case ENC_WRITE_REGS:
-//            enc_writeRegs(USB_request.setup.wValue.b[0], BD[EP0OUT].address, USB_request.setup.wLength.b[0]);
-//            break;
-//        default:
-//            USB_error_flags |= 0x01;                    // set Request Error Flag
-//    }
+    switch (USB_request.setup.bRequest) {
+        default:
+            USB_error_flags |= 0x01;                    // set Request Error Flag
+    }
 }
 
 uint16_t pwm_duty_pct_to_int(float *percent) {
@@ -301,7 +326,7 @@ int main(void) {
         current_ticks = spi_read_ticks();
         encoder_master_count = encoder_counter(current_ticks, previous_ticks, encoder_master_count);
         degs = count_to_deg(encoder_master_count);
-        texture(degs);
+        texture(degs, TEXTURE_LT_ST, TEXTURE_HV_ST, TEXTURE_LT_SL, TEXTURE_HV_SL, TEXTURE_SB);
         previous_ticks = current_ticks;
         ServiceUSB();
     }

@@ -190,9 +190,9 @@ void VendorRequests(void) {
             BD[EP0IN].bytecount = 1;  // set EP0 IN byte count to 1
             BD[EP0IN].status = 0xC8;  // send packet as DATA1, set UOWN bit
             break;
-        case READ_WALL_ANGLE:
-            WALL_ANGLE = ((double)(USB_setup.wValue.w)/(double)(USB_setup.wIndex.w)) - 50;
-            printf("Set wall angle to %4f\r\n", WALL_ANGLE);
+        case SET_WALL_ANGLE:
+            WALL_ANGLE = (float)(USB_setup.wValue.w)/(float)(USB_setup.wIndex.w);
+            printf("Set wall angle to %4f\r\n", WALL ANGLE);
             BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
             BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
             break;
