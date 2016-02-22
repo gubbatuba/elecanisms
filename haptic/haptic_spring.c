@@ -321,6 +321,7 @@ int main(void) {
     float pid_command = 0;
     float theor_torque;
     bitset(&IEC0, 2);
+    bitset(&IEC0, 6);
     
     while (1) {
         if (timer_flag(&timer2)) {
@@ -358,5 +359,10 @@ int main(void) {
 
 void __attribute__((interrupt, auto_psv)) _OC1Interrupt(void) {
     bitclear(&IFS0, 2);
+    motor.raw_volts = pin_read(MOTOR_VOLTAGE) >> 6; // Shift to get only the 10 bits from the ADC
+}
+
+void __attribute__((interrupt, auto_psv)) _OC2Interrupt(void) {
+    bitclear(&IFS0, 6);
     motor.raw_volts = pin_read(MOTOR_VOLTAGE) >> 6; // Shift to get only the 10 bits from the ADC
 }
