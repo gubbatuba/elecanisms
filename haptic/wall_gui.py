@@ -70,8 +70,8 @@ class simpleapp_tk(Tkinter.Tk):
                 self.usbc = None
 
     def set_wall_ang(self):
-        new_constant = self.Damper_Coef_Scale.get()
-        self.usbc.set_damper_coef(new_constant)
+        new_constant = self.wall_angle_scale.get()
+        self.usbc.set_wall_angle(new_constant)
 
     # def set_pid_p(self):
     #     new_constant = self.Kp_constant_scale.get()
