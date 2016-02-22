@@ -120,6 +120,7 @@ void wall(double degs, double wall_deg) {
 
     pwm_set_direction(direction);
     pwm_set_duty(new_duty);
+    return new_duty
 }
 
 //Change master count to degs
@@ -191,7 +192,13 @@ void VendorRequests(void) {
             BD[EP0IN].status = 0xC8;  // send packet as DATA1, set UOWN bit
             break;
         case READ_WALL_ANGLE:
-            WALL_ANGLE = (float)(USB_setup.wValue.w)/(float)(USB_setup.wIndex.w);
+            wall_angle = wall(degs, WALL_ANGLE);
+            printf("Set wall angle to %4f\r\n", WALL_ANGLE);
+            BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
+            BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
+            break;
+        case READ_WALL_ANGLE:
+            wall_angle = wall(degs, WALL_ANGLE);
             printf("Set wall angle to %4f\r\n", WALL_ANGLE);
             BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0 
             BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
