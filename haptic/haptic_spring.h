@@ -85,9 +85,9 @@ float MAX_DUTY = 0.60;
 
 _PIN* DEBUGD0 = &D[12]; 
 _PIN* DEBUGD1 = &D[13]; 
-#define LOOP_TIME 0.005
+#define LOOP_TIME 0.001
 
-#define KP .5
+#define KP .3
 #define KI 0
 #define KD .01
 
